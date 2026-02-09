@@ -32,6 +32,11 @@ public partial class MainWindow : Window
     // Number of pixel segments in the horizontal bar
     private const int SEGMENT_COUNT = 80;
 
+    // ── Blink (last segment heartbeat) ───────────────────────
+    private Rectangle? _lastFilledSegment;
+    private DispatcherTimer? _blinkTimer;
+    private bool _blinkOn = true;
+
     // ── Gradient stops (Green → Yellow → Orange → Red) ───────
     private static readonly Color ColorGreen  = Color.FromRgb(76, 217, 100);
     private static readonly Color ColorYellow = Color.FromRgb(255, 230, 50);
@@ -107,6 +112,16 @@ public partial class MainWindow : Window
             _session.SaveState();
         };
         _timer.Start();
+
+        // Blink timer for last segment
+        _blinkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        _blinkTimer.Tick += (_, _) =>
+        {
+            if (_lastFilledSegment == null || _isStopped || _session.IsPaused) return;
+            _blinkOn = !_blinkOn;
+            _lastFilledSegment.Opacity = _blinkOn ? 1.0 : 0.6;
+        };
+        _blinkTimer.Start();
     }
 
     // ── Display update ────────────────────────────────────────
@@ -160,6 +175,7 @@ public partial class MainWindow : Window
     private void DrawBar(double progress)
     {
         barCanvas.Children.Clear();
+        _lastFilledSegment = null;
 
         double canvasWidth = barCanvas.ActualWidth;
         double canvasHeight = barCanvas.ActualHeight;
@@ -195,6 +211,10 @@ public partial class MainWindow : Window
                     color = InterpolateColor(color, ColorOvertime, 0.4);
                 }
                 rect.Fill = new SolidColorBrush(color);
+
+                // Track the last filled segment for blink
+                if (i == filledSegments - 1)
+                    _lastFilledSegment = rect;
             }
             else
             {
