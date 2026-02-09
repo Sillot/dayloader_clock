@@ -230,7 +230,7 @@ public partial class MainWindow : Window
         if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
         // Dynamically compute segment count to fit the available width
-        const double targetSegWidth = 4.5;
+        const double targetSegWidth = 12;
         const double gap = 2;
         int segCount = Math.Max(10, (int)((canvasWidth + gap) / (targetSegWidth + gap)));
         double segWidth = (canvasWidth - gap * (segCount - 1)) / segCount;
@@ -728,7 +728,7 @@ public partial class MainWindow : Window
         double canvasHeight = pomodoroCanvas.ActualHeight;
         if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
-        const double targetSegWidth = 3.5;
+        const double targetSegWidth = 9;
         const double gap = 1.5;
         int segCount = Math.Max(8, (int)((canvasWidth + gap) / (targetSegWidth + gap)));
         double segWidth = (canvasWidth - gap * (segCount - 1)) / segCount;
