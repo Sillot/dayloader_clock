@@ -20,3 +20,4 @@ C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\refint\Dayloa
 C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\DayloaderClock.pdb
 C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\DayloaderClock.genruntimeconfig.cache
 C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\ref\DayloaderClock.dll
+C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\DayloaderClock.sourcelink.json

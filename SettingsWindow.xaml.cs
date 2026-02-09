@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Windows;
+using System.Windows.Input;
 using DayloaderClock.Models;
 using Microsoft.Win32;
 
@@ -58,7 +59,9 @@ public partial class SettingsWindow : Window
             LunchDurationMinutes = lunchMinutes,
             AutoStartWithWindows = chkAutoStart.IsChecked == true,
             WindowLeft = Settings.WindowLeft,
-            WindowTop = Settings.WindowTop
+            WindowTop = Settings.WindowTop,
+            WindowWidth = Settings.WindowWidth,
+            WindowHeight = Settings.WindowHeight
         };
 
         SetAutoStart(Settings.AutoStartWithWindows);
@@ -71,6 +74,12 @@ public partial class SettingsWindow : Window
     {
         DialogResult = false;
         Close();
+    }
+
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 1)
+            DragMove();
     }
 
     // ── Helpers ───────────────────────────────────────────────

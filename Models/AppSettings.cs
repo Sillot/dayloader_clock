@@ -23,6 +23,12 @@ public class AppSettings
     /// <summary>Saved window position Y (-1 = auto)</summary>
     public double WindowTop { get; set; } = -1;
 
+    /// <summary>Saved window width (-1 = default)</summary>
+    public double WindowWidth { get; set; } = -1;
+
+    /// <summary>Saved window height (-1 = default)</summary>
+    public double WindowHeight { get; set; } = -1;
+
     public TimeSpan GetLunchStart()
     {
         return TimeSpan.TryParse(LunchStartTime, out var ts) ? ts : new TimeSpan(12, 0, 0);

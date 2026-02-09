@@ -49,6 +49,7 @@ public partial class MainWindow : Window
 
         Closing += MainWindow_Closing;
         LocationChanged += MainWindow_LocationChanged;
+        SizeChanged += MainWindow_SizeChanged;
     }
 
     // ── Initialization ────────────────────────────────────────
@@ -146,15 +147,18 @@ public partial class MainWindow : Window
         double canvasHeight = barCanvas.ActualHeight;
         if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
-        double gap = 2;
-        double segWidth = (canvasWidth - gap * (SEGMENT_COUNT - 1)) / SEGMENT_COUNT;
-        if (segWidth < 1) segWidth = 1;
+        // Dynamically compute segment count to fit the available width
+        const double targetSegWidth = 4.5;
+        const double gap = 2;
+        int segCount = Math.Max(10, (int)((canvasWidth + gap) / (targetSegWidth + gap)));
+        double segWidth = (canvasWidth - gap * (segCount - 1)) / segCount;
+        if (segWidth < 2) segWidth = 2;
 
         int filledSegments = (int)Math.Min(
-            Math.Floor(progress / 100.0 * SEGMENT_COUNT), SEGMENT_COUNT);
+            Math.Floor(progress / 100.0 * segCount), segCount);
         bool isOvertime = progress > 100;
 
-        for (int i = 0; i < SEGMENT_COUNT; i++)
+        for (int i = 0; i < segCount; i++)
         {
             var rect = new Rectangle
             {
@@ -166,7 +170,7 @@ public partial class MainWindow : Window
 
             if (i < filledSegments)
             {
-                var color = GetBarGradientColor(i, SEGMENT_COUNT);
+                var color = GetBarGradientColor(i, segCount);
                 if (isOvertime)
                 {
                     // Pulsing red tint in overtime
@@ -360,6 +364,12 @@ public partial class MainWindow : Window
 
     private void RestoreWindowPosition()
     {
+        if (_settings.WindowWidth > 0 && _settings.WindowHeight > 0)
+        {
+            Width = _settings.WindowWidth;
+            Height = _settings.WindowHeight;
+        }
+
         if (_settings.WindowLeft >= 0 && _settings.WindowTop >= 0)
         {
             Left = _settings.WindowLeft;
@@ -402,6 +412,15 @@ public partial class MainWindow : Window
         {
             _settings.WindowLeft = Left;
             _settings.WindowTop = Top;
+        }
+    }
+
+    private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (WindowState == WindowState.Normal)
+        {
+            _settings.WindowWidth = Width;
+            _settings.WindowHeight = Height;
         }
     }
 }

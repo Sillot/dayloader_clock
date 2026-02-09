@@ -3,11 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Dayloader Clock"
         Width="560" Height="195"
+        MinWidth="340" MinHeight="155"
+        MaxWidth="900" MaxHeight="350"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         Topmost="True"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="True">
 
     <Window.Resources>
@@ -96,7 +98,7 @@
 
                 <!-- ═══ PROGRESS BAR ═══ -->
                 <Border Grid.Row="2" Background="#3A2E1E" CornerRadius="8"
-                        Padding="4" MinHeight="50">
+                        Padding="4" MinHeight="16">
                     <Grid>
                         <Border x:Name="barTrack" CornerRadius="5"
                                 Background="#1E1A12" ClipToBounds="True">
@@ -119,23 +121,22 @@
 
                 <!-- ═══ PERCENTAGE MARKERS ═══ -->
                 <Grid Grid.Row="3" Margin="6,3,6,0">
-                    <TextBlock Text="0%" HorizontalAlignment="Left"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="0%" HorizontalAlignment="Left"
                                Foreground="#6B5035" FontSize="10" FontFamily="Consolas"/>
-                    <TextBlock Text="25%" Foreground="#6B5035" FontSize="10"
-                               FontFamily="Consolas">
-                        <TextBlock.Margin>
-                            <Thickness Left="115" Top="0" Right="0" Bottom="0"/>
-                        </TextBlock.Margin>
-                    </TextBlock>
-                    <TextBlock Text="50%" Foreground="#6B5035" FontSize="10"
-                               FontFamily="Consolas" HorizontalAlignment="Center"/>
-                    <TextBlock Text="75%" Foreground="#6B5035" FontSize="10"
-                               FontFamily="Consolas" HorizontalAlignment="Right">
-                        <TextBlock.Margin>
-                            <Thickness Left="0" Top="0" Right="115" Bottom="0"/>
-                        </TextBlock.Margin>
-                    </TextBlock>
-                    <TextBlock Text="100%" HorizontalAlignment="Right"
+                    <TextBlock Grid.Column="1" Text="25%" HorizontalAlignment="Left"
+                               Foreground="#6B5035" FontSize="10" FontFamily="Consolas"/>
+                    <TextBlock Grid.Column="2" Text="50%" HorizontalAlignment="Left"
+                               Foreground="#6B5035" FontSize="10" FontFamily="Consolas"/>
+                    <TextBlock Grid.Column="3" Text="75%" HorizontalAlignment="Left"
+                               Foreground="#6B5035" FontSize="10" FontFamily="Consolas"/>
+                    <TextBlock Grid.Column="4" Text="100%"
                                Foreground="#6B5035" FontSize="10" FontFamily="Consolas"/>
                 </Grid>
 
