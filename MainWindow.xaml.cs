@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private AppSettings _settings = null!;
     private DispatcherTimer _timer = null!;
     private System.Windows.Forms.NotifyIcon _trayIcon = null!;
+    private System.Windows.Forms.ToolStripMenuItem _trayPauseItem = null!;
     private bool _isExiting;
 
     // Number of pixel segments in the horizontal bar
@@ -40,6 +41,7 @@ public partial class MainWindow : Window
         _settings = StorageService.LoadSettings();
         _session = new SessionService(_settings);
         _session.OvertimeStarted += OnOvertimeStarted;
+        _session.PauseStateChanged += OnPauseStateChanged;
 
         InitializeTrayIcon();
         InitializeTimer();
@@ -66,8 +68,12 @@ public partial class MainWindow : Window
         _trayIcon.DoubleClick += (_, _) => ShowWindow();
 
         var menu = new System.Windows.Forms.ContextMenuStrip();
-        menu.Items.Add("Afficher", null, (_, _) => ShowWindow());
-        menu.Items.Add("Paramètres", null, (_, _) => Dispatcher.Invoke(OpenSettings));
+        menu.Items.Add("Afficher", null, (_, _) => Dispatcher.Invoke(ShowWindow));
+        _trayPauseItem = new System.Windows.Forms.ToolStripMenuItem("⏸ Pause", null, (_, _) => Dispatcher.Invoke(() => _session.TogglePause()));
+        menu.Items.Add(_trayPauseItem);
+        menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+        menu.Items.Add("📅 Historique", null, (_, _) => Dispatcher.Invoke(OpenHistory));
+        menu.Items.Add("⚙ Paramètres", null, (_, _) => Dispatcher.Invoke(OpenSettings));
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add("Quitter", null, (_, _) => Dispatcher.Invoke(ExitApp));
         _trayIcon.ContextMenuStrip = menu;
@@ -81,6 +87,7 @@ public partial class MainWindow : Window
             _session.CheckNewDay();
             UpdateDisplay();
             _session.CheckAndNotifyOvertime();
+            _session.SaveState();
         };
         _timer.Start();
     }
@@ -94,10 +101,14 @@ public partial class MainWindow : Window
         var progress = _session.GetProgressPercent();
         var isOvertime = _session.IsOvertime;
         var isLunch = _session.IsLunchTime;
+        var isPaused = _session.IsPaused;
 
         // ── Text labels ──
         txtStartTime.Text = $"Début: {_session.LoginTime:HH:mm}";
         txtElapsed.Text = FormatTime(effectiveWork);
+
+        // Pause indicator
+        txtPauseIndicator.Visibility = isPaused ? Visibility.Visible : Visibility.Collapsed;
 
         if (isOvertime)
         {
@@ -343,6 +354,25 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OpenHistory()
+    {
+        ShowWindow();
+        var win = new HistoryWindow { Owner = this };
+        win.ShowDialog();
+    }
+
+    private void OnPauseStateChanged(bool isPaused)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            btnPause.Content = isPaused ? "\u25B6" : "\u23F8";
+            btnPause.ToolTip = isPaused ? "Reprendre" : "Pause";
+            txtPauseIndicator.Visibility = isPaused ? Visibility.Visible : Visibility.Collapsed;
+            _trayPauseItem.Text = isPaused ? "\u25B6 Reprendre" : "\u23F8 Pause";
+            UpdateDisplay();
+        });
+    }
+
     private void ExitApp()
     {
         _isExiting = true;
@@ -397,11 +427,9 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
-    private void History_Click(object sender, RoutedEventArgs e)
-    {
-        var win = new HistoryWindow { Owner = this };
-        win.ShowDialog();
-    }
+    private void History_Click(object sender, RoutedEventArgs e) => OpenHistory();
+
+    private void Pause_Click(object sender, RoutedEventArgs e) => _session.TogglePause();
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {

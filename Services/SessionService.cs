@@ -13,11 +13,27 @@ public class SessionService
     private string _currentDate;
     private bool _overtimeNotified;
 
+    // ── Pause tracking ────────────────────────────────────────
+    private bool _isPaused;
+    private DateTime _pauseStartTime;
+    private TimeSpan _totalPausedTime = TimeSpan.Zero;
+
     /// <summary>Time the user first logged in today.</summary>
     public DateTime LoginTime { get; private set; }
 
+    /// <summary>Whether the clock is currently paused.</summary>
+    public bool IsPaused => _isPaused;
+
+    /// <summary>Total time spent paused today.</summary>
+    public TimeSpan TotalPausedTime => _isPaused
+        ? _totalPausedTime + (DateTime.Now - _pauseStartTime)
+        : _totalPausedTime;
+
     /// <summary>Fired once when overtime starts (effective work > work day duration).</summary>
     public event Action? OvertimeStarted;
+
+    /// <summary>Fired when pause state changes.</summary>
+    public event Action<bool>? PauseStateChanged;
 
     public SessionService(AppSettings settings)
     {
@@ -91,6 +107,29 @@ public class SessionService
         _settings = settings;
     }
 
+    // ── Pause / Resume ────────────────────────────────────────
+
+    public void Pause()
+    {
+        if (_isPaused) return;
+        _isPaused = true;
+        _pauseStartTime = DateTime.Now;
+        PauseStateChanged?.Invoke(true);
+    }
+
+    public void Resume()
+    {
+        if (!_isPaused) return;
+        _totalPausedTime += DateTime.Now - _pauseStartTime;
+        _isPaused = false;
+        PauseStateChanged?.Invoke(false);
+    }
+
+    public void TogglePause()
+    {
+        if (_isPaused) Resume(); else Pause();
+    }
+
     // ── Time calculations ─────────────────────────────────────
 
     /// <summary>
@@ -116,7 +155,7 @@ public class SessionService
             lunchOverlap = overlapEnd - overlapStart;
         }
 
-        var effective = totalElapsed - lunchOverlap;
+        var effective = totalElapsed - lunchOverlap - TotalPausedTime;
         return effective > TimeSpan.Zero ? effective : TimeSpan.Zero;
     }
 
