@@ -35,7 +35,9 @@ public partial class MainWindow : Window
     // ── Blink (last segment heartbeat) ───────────────────────
     private Rectangle? _lastFilledSegment;
     private Rectangle? _lastPomodoroSegment;
+    private int _prevBarFilled = -1;
     private int _prevPomodoroFilled = -1;
+    private int _prevTrayFilled = -1;
     private DispatcherTimer? _blinkTimer;
     private bool _blinkOn = true;
 
@@ -222,9 +224,6 @@ public partial class MainWindow : Window
 
     private void DrawBar(double progress)
     {
-        barCanvas.Children.Clear();
-        _lastFilledSegment = null;
-
         double canvasWidth = barCanvas.ActualWidth;
         double canvasHeight = barCanvas.ActualHeight;
         if (canvasWidth <= 0 || canvasHeight <= 0) return;
@@ -242,6 +241,14 @@ public partial class MainWindow : Window
         if (filledSegments == 0 && progress > 0 && !_isStopped)
             filledSegments = 1;
         bool isOvertime = progress > 100;
+
+        // Skip full redraw if segment count hasn't changed
+        if (filledSegments == _prevBarFilled && !isOvertime && barCanvas.Children.Count > 0)
+            return;
+        _prevBarFilled = filledSegments;
+
+        barCanvas.Children.Clear();
+        _lastFilledSegment = null;
 
         for (int i = 0; i < segCount; i++)
         {
@@ -280,14 +287,24 @@ public partial class MainWindow : Window
 
     private void BarCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
     {
+        _prevBarFilled = -1; // Force redraw on resize
         DrawBar(_session.GetProgressPercent());
     }
 
     private void UpdateTrayIcon(double progress, TimeSpan effectiveWork, double displayPercent)
     {
+        int filled = (int)(Math.Min(progress, 100) / 100.0 * 14);
+        bool isOvertime = progress > 100;
+        int trayKey = isOvertime ? -1 : filled;
+
+        _trayIcon.Text = $"Dayloader \u2013 {displayPercent:F0}% ({FormatTime(effectiveWork)})";
+
+        // Skip icon redraw if pixel fill hasn't changed
+        if (trayKey == _prevTrayFilled) return;
+        _prevTrayFilled = trayKey;
+
         var oldIcon = _trayIcon.Icon;
         _trayIcon.Icon = CreateTrayIcon(progress);
-        _trayIcon.Text = $"Dayloader \u2013 {displayPercent:F0}% ({FormatTime(effectiveWork)})";
 
         if (oldIcon != null)
         {
