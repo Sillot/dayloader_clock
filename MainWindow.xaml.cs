@@ -34,8 +34,15 @@ public partial class MainWindow : Window
 
     // ── Blink (last segment heartbeat) ───────────────────────
     private Rectangle? _lastFilledSegment;
+    private Rectangle? _lastPomodoroSegment;
+    private int _prevPomodoroFilled = -1;
     private DispatcherTimer? _blinkTimer;
     private bool _blinkOn = true;
+
+    // ── Mini mode ───────────────────────────────────────────
+    private bool _isMiniMode;
+    private double _savedWidth;
+    private double _savedHeight;
 
     // ── Gradient stops (Green → Yellow → Orange → Red) ───────
     private static readonly Color ColorGreen  = Color.FromRgb(76, 217, 100);
@@ -88,8 +95,11 @@ public partial class MainWindow : Window
         _trayIcon.DoubleClick += (_, _) => ShowWindow();
 
         var menu = new System.Windows.Forms.ContextMenuStrip();
-        menu.Items.Add("Afficher", null, (_, _) => Dispatcher.Invoke(ShowWindow));        _trayStopItem = new System.Windows.Forms.ToolStripMenuItem("\u23F9 Fin de journ\u00e9e", null, (_, _) => Dispatcher.Invoke(ToggleStop));
-        menu.Items.Add(_trayStopItem);        _trayPauseItem = new System.Windows.Forms.ToolStripMenuItem("⏸ Pause", null, (_, _) => Dispatcher.Invoke(() => _session.TogglePause()));
+        menu.Items.Add("Afficher", null, (_, _) => Dispatcher.Invoke(ShowWindow));
+        menu.Items.Add("\u25A0 Mini mode", null, (_, _) => Dispatcher.Invoke(() => { ShowWindow(); ToggleMiniMode(); }));
+        _trayStopItem = new System.Windows.Forms.ToolStripMenuItem("\u23F9 Fin de journ\u00e9e", null, (_, _) => Dispatcher.Invoke(ToggleStop));
+        menu.Items.Add(_trayStopItem);
+        _trayPauseItem = new System.Windows.Forms.ToolStripMenuItem("\u23F8 Pause", null, (_, _) => Dispatcher.Invoke(() => _session.TogglePause()));
         menu.Items.Add(_trayPauseItem);
         _trayPomodoroItem = new System.Windows.Forms.ToolStripMenuItem("🍅 Pomodoro", null, (_, _) => Dispatcher.Invoke(TogglePomodoro));
         menu.Items.Add(_trayPomodoroItem);
@@ -117,9 +127,11 @@ public partial class MainWindow : Window
         _blinkTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _blinkTimer.Tick += (_, _) =>
         {
-            if (_lastFilledSegment == null || _isStopped || _session.IsPaused) return;
             _blinkOn = !_blinkOn;
-            _lastFilledSegment.Opacity = _blinkOn ? 1.0 : 0.6;
+            if (_lastFilledSegment != null && !_isStopped && !_session.IsPaused)
+                _lastFilledSegment.Opacity = _blinkOn ? 1.0 : 0.6;
+            if (_lastPomodoroSegment != null && _pomodoroActive)
+                _lastPomodoroSegment.Opacity = _blinkOn ? 1.0 : 0.5;
         };
         _blinkTimer.Start();
     }
@@ -166,8 +178,44 @@ public partial class MainWindow : Window
         // Bar
         DrawBar(progress);
 
+        // Mini mode overlay
+        if (_isMiniMode)
+        {
+            if (isOvertime)
+            {
+                var ot = _session.GetOvertimeTime();
+                txtMiniPercent.Text = $"DONE  +{FormatTime(ot)}";
+            }
+            else if (_isStopped)
+            {
+                txtMiniPercent.Text = $"{displayPercent:0}%  ■ STOP";
+            }
+            else if (isPaused)
+            {
+                txtMiniPercent.Text = $"{displayPercent:0}%  ⏸ {FormatTime(remaining)}";
+            }
+            else
+            {
+                txtMiniPercent.Text = $"{displayPercent:0}%  —  {FormatTime(remaining)}";
+            }
+        }
+
         // Tray icon
         UpdateTrayIcon(progress, effectiveWork, displayPercent);
+
+        // Taskbar progress bar
+        if (TaskbarItemInfo != null)
+        {
+            TaskbarItemInfo.ProgressValue = displayPercent / 100.0;
+            if (_isStopped)
+                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.None;
+            else if (isOvertime)
+                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Error;
+            else if (isPaused)
+                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Paused;
+            else
+                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Normal;
+        }
     }
 
     // ── Bar drawing ───────────────────────────────────────────
@@ -190,6 +238,9 @@ public partial class MainWindow : Window
 
         int filledSegments = (int)Math.Min(
             Math.Floor(progress / 100.0 * segCount), segCount);
+        // Always show at least 1 filled segment when the day has started
+        if (filledSegments == 0 && progress > 0 && !_isStopped)
+            filledSegments = 1;
         bool isOvertime = progress > 100;
 
         for (int i = 0; i < segCount; i++)
@@ -522,6 +573,56 @@ public partial class MainWindow : Window
 
     private void Pomodoro_Click(object sender, RoutedEventArgs e) => TogglePomodoro();
 
+    private void BarCanvas_DoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+            ToggleMiniMode();
+    }
+
+    private void ToggleMiniMode()
+    {
+        _isMiniMode = !_isMiniMode;
+
+        if (_isMiniMode)
+        {
+            _savedWidth = Width;
+            _savedHeight = Height;
+
+            rowTitle.Visibility = Visibility.Collapsed;
+            rowInfo.Visibility = Visibility.Collapsed;
+            rowMarkers.Visibility = Visibility.Collapsed;
+            rowFooter.Visibility = Visibility.Collapsed;
+            mainGrid.Margin = new Thickness(3, 3, 3, 3);
+            outerBorder.Margin = new Thickness(2);
+            outerBorder.CornerRadius = new CornerRadius(8);
+            innerBorder.Margin = new Thickness(2);
+            innerBorder.CornerRadius = new CornerRadius(6);
+            txtMiniPercent.Visibility = Visibility.Visible;
+
+            MinHeight = 34;
+            Height = 34;
+            ResizeMode = ResizeMode.NoResize;
+        }
+        else
+        {
+            rowTitle.Visibility = Visibility.Visible;
+            rowInfo.Visibility = Visibility.Visible;
+            rowMarkers.Visibility = Visibility.Visible;
+            rowFooter.Visibility = Visibility.Visible;
+            mainGrid.Margin = new Thickness(20, 10, 20, 12);
+            outerBorder.Margin = new Thickness(6);
+            outerBorder.CornerRadius = new CornerRadius(14);
+            innerBorder.Margin = new Thickness(4);
+            innerBorder.CornerRadius = new CornerRadius(11);
+            txtMiniPercent.Visibility = Visibility.Collapsed;
+
+            MinHeight = 160;
+            ResizeMode = ResizeMode.CanResizeWithGrip;
+            Width = _savedWidth;
+            Height = _savedHeight;
+        }
+    }
+
     // ── Pomodoro ──────────────────────────────────────────────
 
     private void TogglePomodoro()
@@ -575,6 +676,8 @@ public partial class MainWindow : Window
         _trayPomodoroItem.Text = "\uD83C\uDF45 Pomodoro";
         pomodoroBar.Visibility = Visibility.Collapsed;
         txtPomodoro.Text = "";
+        _prevPomodoroFilled = -1;
+        _lastPomodoroSegment = null;
 
         if (!cancelled)
         {
@@ -616,7 +719,67 @@ public partial class MainWindow : Window
 
         txtPomodoro.Text = $"\uD83C\uDF45 {(int)remaining.TotalMinutes:D2}:{remaining.Seconds:D2}";
         pomodoroBar.Visibility = Visibility.Visible;
-        pomodoroFill.Width = pomodoroBar.ActualWidth * progress;
+        DrawPomodoroBar(progress);
+    }
+
+    private void DrawPomodoroBar(double progress)
+    {
+        double canvasWidth = pomodoroCanvas.ActualWidth;
+        double canvasHeight = pomodoroCanvas.ActualHeight;
+        if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
+        const double targetSegWidth = 3.5;
+        const double gap = 1.5;
+        int segCount = Math.Max(8, (int)((canvasWidth + gap) / (targetSegWidth + gap)));
+        double segWidth = (canvasWidth - gap * (segCount - 1)) / segCount;
+        if (segWidth < 1.5) segWidth = 1.5;
+
+        int filledSegments = (int)Math.Min(
+            Math.Floor(progress * segCount), segCount);
+        if (filledSegments == 0 && progress > 0)
+            filledSegments = 1;
+
+        // Skip full redraw if segment count hasn't changed
+        if (filledSegments == _prevPomodoroFilled && pomodoroCanvas.Children.Count > 0)
+            return;
+        _prevPomodoroFilled = filledSegments;
+
+        pomodoroCanvas.Children.Clear();
+        _lastPomodoroSegment = null;
+
+        // Red gradient: from warm orange-red to deep red
+        var colorStart = Color.FromRgb(0xE8, 0x70, 0x30);
+        var colorEnd = Color.FromRgb(0xCC, 0x30, 0x30);
+        var colorEmpty = Color.FromRgb(0x30, 0x28, 0x1A);
+
+        for (int i = 0; i < segCount; i++)
+        {
+            var rect = new Rectangle
+            {
+                Width = segWidth,
+                Height = canvasHeight,
+                RadiusX = 1.5,
+                RadiusY = 1.5
+            };
+
+            if (i < filledSegments)
+            {
+                double t = segCount > 1 ? (double)i / (segCount - 1) : 0;
+                var c = InterpolateColor(colorStart, colorEnd, t);
+                rect.Fill = new SolidColorBrush(c);
+
+                if (i == filledSegments - 1)
+                    _lastPomodoroSegment = rect;
+            }
+            else
+            {
+                rect.Fill = new SolidColorBrush(colorEmpty);
+            }
+
+            Canvas.SetLeft(rect, i * (segWidth + gap));
+            Canvas.SetTop(rect, 0);
+            pomodoroCanvas.Children.Add(rect);
+        }
     }
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
