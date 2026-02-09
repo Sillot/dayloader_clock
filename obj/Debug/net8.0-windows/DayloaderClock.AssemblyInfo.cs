@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DayloaderClock")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+215d2193d364a90a0e0aece1a66fbb6890a61007")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bc76792f220e7cad0375eeae600a7076e25ec527")]
 [assembly: System.Reflection.AssemblyProductAttribute("DayloaderClock")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DayloaderClock")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

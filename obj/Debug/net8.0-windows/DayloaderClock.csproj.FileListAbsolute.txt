@@ -21,3 +21,15 @@ C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\DayloaderCloc
 C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\DayloaderClock.genruntimeconfig.cache
 C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\ref\DayloaderClock.dll
 C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\DayloaderClock.sourcelink.json
+C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\HistoryWindow.baml
+C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\HistoryWindow.g.cs
+C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\DayloaderClock.csproj.AssemblyReference.cache
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\ClosedXML.dll
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\ClosedXML.Parser.dll
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\DocumentFormat.OpenXml.dll
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\DocumentFormat.OpenXml.Framework.dll
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\ExcelNumberFormat.dll
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\RBush.dll
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\SixLabors.Fonts.dll
+C:\Users\QHA21350\Projets\dayloader_clock\bin\Debug\net8.0-windows\System.IO.Packaging.dll
+C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\Dayloade.66B4B308.Up2Date

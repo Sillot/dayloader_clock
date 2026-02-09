@@ -75,6 +75,8 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-2,-6,0">
+                        <Button Content="&#x1F4C5;" Style="{StaticResource ChromeButton}"
+                                Click="History_Click" ToolTip="Historique" FontSize="13"/>
                         <Button Content="&#x2699;" Style="{StaticResource ChromeButton}"
                                 Click="Settings_Click" ToolTip="Paramètres" FontSize="13"/>
                         <Button Content="&#x2014;" Style="{StaticResource ChromeButton}"

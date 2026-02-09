@@ -397,6 +397,12 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e) => OpenSettings();
 
+    private void History_Click(object sender, RoutedEventArgs e)
+    {
+        var win = new HistoryWindow { Owner = this };
+        win.ShowDialog();
+    }
+
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (!_isExiting)
