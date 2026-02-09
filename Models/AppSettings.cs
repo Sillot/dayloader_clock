@@ -1,0 +1,35 @@
+namespace DayloaderClock.Models;
+
+/// <summary>
+/// Application settings, persisted as JSON in %APPDATA%/DayloaderClock/settings.json
+/// </summary>
+public class AppSettings
+{
+    /// <summary>Work day duration in minutes (default 480 = 8h)</summary>
+    public int WorkDayMinutes { get; set; } = 480;
+
+    /// <summary>Lunch break start time in HH:mm format</summary>
+    public string LunchStartTime { get; set; } = "12:00";
+
+    /// <summary>Lunch break duration in minutes</summary>
+    public int LunchDurationMinutes { get; set; } = 60;
+
+    /// <summary>Whether the app starts automatically with Windows</summary>
+    public bool AutoStartWithWindows { get; set; } = true;
+
+    /// <summary>Saved window position X (-1 = auto)</summary>
+    public double WindowLeft { get; set; } = -1;
+
+    /// <summary>Saved window position Y (-1 = auto)</summary>
+    public double WindowTop { get; set; } = -1;
+
+    public TimeSpan GetLunchStart()
+    {
+        return TimeSpan.TryParse(LunchStartTime, out var ts) ? ts : new TimeSpan(12, 0, 0);
+    }
+
+    public TimeSpan GetLunchEnd()
+    {
+        return GetLunchStart().Add(TimeSpan.FromMinutes(LunchDurationMinutes));
+    }
+}
