@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Dayloader Clock"
-        Width="560" Height="195"
-        MinWidth="340" MinHeight="155"
+        Width="520" Height="185"
+        MinWidth="340" MinHeight="130"
         MaxWidth="900" MaxHeight="350"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -68,13 +68,15 @@
 
                 <!-- ═══ TITLE ═══ -->
                 <Grid Grid.Row="0" Margin="0,0,0,6">
-                    <TextBlock Text="THE DAYLOADER CLOCK"
+                    <TextBlock x:Name="txtTitle" Text="THE DAYLOADER CLOCK"
                                FontSize="14" FontWeight="Bold"
                                Foreground="#4A3520"
                                FontFamily="Consolas"
                                HorizontalAlignment="Left"
                                VerticalAlignment="Center"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-2,-6,0">
+                        <Button x:Name="btnStop" Content="&#x23F9;" Style="{StaticResource ChromeButton}"
+                                Click="Stop_Click" ToolTip="Fin de journée" FontSize="13"/>
                         <Button x:Name="btnPause" Content="&#x23F8;" Style="{StaticResource ChromeButton}"
                                 Click="Pause_Click" ToolTip="Pause" FontSize="13"/>
                         <Button Content="&#x1F4C5;" Style="{StaticResource ChromeButton}"
@@ -146,9 +148,22 @@
 
                 <!-- ═══ FOOTER ═══ -->
                 <Grid Grid.Row="4" Margin="0,3,0,0">
-                    <TextBlock x:Name="txtEndTime" Text="Fin: ~--:--"
-                               Foreground="#6B5035" FontSize="10" FontFamily="Consolas"
-                               VerticalAlignment="Center"/>
+
+                    <!-- Pomodoro button -->
+                    <Button x:Name="btnPomodoro" Content="🍅" Style="{StaticResource ChromeButton}"
+                            Click="Pomodoro_Click" ToolTip="Pomodoro (25 min)" FontSize="13"
+                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Margin="-4,0,0,0"/>
+
+                    <TextBlock x:Name="txtStopIndicator" Text="&#x23F9; JOURNÉE TERMINÉE"
+                               Foreground="#CC6633" FontSize="11" FontWeight="Bold"
+                               FontFamily="Consolas"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               Visibility="Collapsed">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.6"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
 
                     <TextBlock x:Name="txtPauseIndicator" Text="&#x23F8; EN PAUSE"
                                Foreground="#E8A030" FontSize="11" FontWeight="Bold"
@@ -160,16 +175,31 @@
                         </TextBlock.Effect>
                     </TextBlock>
 
+                    <!-- Pomodoro progress bar -->
+                    <Grid x:Name="pomodoroBar" HorizontalAlignment="Center" VerticalAlignment="Center"
+                          Visibility="Collapsed" Width="160" Height="14">
+                        <Border Background="#1E1A12" CornerRadius="3" BorderBrush="#5A4830" BorderThickness="1"/>
+                        <Border x:Name="pomodoroFill" Background="#E84030" CornerRadius="3"
+                                HorizontalAlignment="Left" Width="0" Opacity="0.9"/>
+                        <TextBlock x:Name="txtPomodoro" Text="" Foreground="#FFFFFF" FontSize="9"
+                                   FontWeight="Bold" FontFamily="Consolas"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock.Effect>
+                                <DropShadowEffect Color="Black" BlurRadius="3" ShadowDepth="1" Opacity="0.7"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                    </Grid>
+
                     <TextBlock x:Name="txtOvertime" Text=""
                                Foreground="#CC3333" FontSize="11" FontWeight="Bold"
                                FontFamily="Consolas"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                Visibility="Collapsed"/>
 
-                    <TextBlock x:Name="txtProgress" Text="0% LOADED"
-                               Foreground="#4A3520" FontSize="12" FontWeight="Bold"
+                    <TextBlock x:Name="txtVersion" Text="v1.0.0"
+                               Foreground="#8A7560" FontSize="9"
                                FontFamily="Consolas" HorizontalAlignment="Right"
-                               VerticalAlignment="Center"/>
+                               VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0.6"/>
                 </Grid>
             </Grid>
         </Border>

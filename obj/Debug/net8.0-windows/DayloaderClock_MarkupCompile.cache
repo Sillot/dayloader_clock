@@ -1,18 +1,18 @@
 ﻿DayloaderClock
-
+1.0.0.0
 
 winexe
 C#
 .cs
-C:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\
+c:\Users\QHA21350\Projets\dayloader_clock\obj\Debug\net8.0-windows\
 DayloaderClock
 none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
-C:\Users\QHA21350\Projets\dayloader_clock\App.xaml
+c:\Users\QHA21350\Projets\dayloader_clock\App.xaml
 3544024819
 
-101086748891
+13-845054462
 214-887257638
 HistoryWindow.xaml;MainWindow.xaml;SettingsWindow.xaml;
 

@@ -92,7 +92,7 @@ namespace DayloaderClock {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/DayloaderClock;component/historywindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/DayloaderClock;V1.0.0.0;component/historywindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\HistoryWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

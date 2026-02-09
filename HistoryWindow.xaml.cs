@@ -35,6 +35,15 @@ public partial class HistoryWindow : Window
         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
     ];
 
+    /// <summary>Format minutes as "Xh YYmin" (e.g. 1h 30min, 45min, 8h 00min)</summary>
+    private static string FormatDuration(double totalMinutes)
+    {
+        int mins = (int)Math.Round(totalMinutes);
+        int h = mins / 60;
+        int m = mins % 60;
+        return h > 0 ? $"{h}h {m:D2}min" : $"{m}min";
+    }
+
     public HistoryWindow()
     {
         InitializeComponent();
@@ -145,7 +154,7 @@ public partial class HistoryWindow : Window
                     // Hours label
                     var hoursText = new TextBlock
                     {
-                        Text = $"{hours:F1}h",
+                        Text = FormatDuration(session.TotalEffectiveWorkMinutes),
                         FontFamily = new FontFamily("Consolas"),
                         FontSize = 9,
                         HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
@@ -177,7 +186,7 @@ public partial class HistoryWindow : Window
                     cell.ToolTip = $"{date:dd/MM/yyyy}\n" +
                                    $"Login: {login}\n" +
                                    $"Dernière activité: {lastActivity}\n" +
-                                   $"Travail effectif: {hours:F1}h ({session.TotalEffectiveWorkMinutes:F0} min)";
+                                   $"Travail effectif: {FormatDuration(session.TotalEffectiveWorkMinutes)}";
                 }
                 else
                 {
@@ -206,9 +215,8 @@ public partial class HistoryWindow : Window
 
         // Update summary
         txtDaysCount.Text = activeDays.ToString();
-        double totalHours = totalMinutes / 60.0;
-        txtTotalHours.Text = $"{totalHours:F1}h";
-        txtAvgHours.Text = activeDays > 0 ? $"{totalHours / activeDays:F1}h" : "—";
+        txtTotalHours.Text = FormatDuration(totalMinutes);
+        txtAvgHours.Text = activeDays > 0 ? FormatDuration(totalMinutes / activeDays) : "\u2014";
     }
 
     /// <summary>

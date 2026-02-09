@@ -29,6 +29,12 @@ public class AppSettings
     /// <summary>Saved window height (-1 = default)</summary>
     public double WindowHeight { get; set; } = -1;
 
+    /// <summary>Pomodoro focus session duration in minutes (default 25)</summary>
+    public int PomodoroMinutes { get; set; } = 25;
+
+    /// <summary>Whether to enable Windows Do Not Disturb during Pomodoro</summary>
+    public bool PomodoroDndEnabled { get; set; } = true;
+
     public TimeSpan GetLunchStart()
     {
         return TimeSpan.TryParse(LunchStartTime, out var ts) ? ts : new TimeSpan(12, 0, 0);

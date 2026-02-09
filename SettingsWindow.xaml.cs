@@ -15,11 +15,17 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         Settings = currentSettings;
 
+        // Version
+        var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        txtVersion.Text = ver != null ? $"v{ver.Major}.{ver.Minor}.{ver.Build}" : "v?";
+
         // Populate fields from current settings
         txtWorkHours.Text = (currentSettings.WorkDayMinutes / 60.0).ToString("F1", CultureInfo.InvariantCulture);
         txtLunchStart.Text = currentSettings.LunchStartTime;
         txtLunchDuration.Text = currentSettings.LunchDurationMinutes.ToString();
         chkAutoStart.IsChecked = currentSettings.AutoStartWithWindows;
+        txtPomodoro.Text = currentSettings.PomodoroMinutes.ToString();
+        chkPomodoroDnd.IsChecked = currentSettings.PomodoroDndEnabled;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -50,6 +56,13 @@ public partial class SettingsWindow : Window
             return;
         }
 
+        if (!int.TryParse(txtPomodoro.Text, out int pomodoroMinutes)
+            || pomodoroMinutes < 1 || pomodoroMinutes > 120)
+        {
+            ShowError("Durée Pomodoro invalide (entre 1 et 120 minutes).");
+            return;
+        }
+
         // ── Apply ──
 
         Settings = new AppSettings
@@ -58,6 +71,8 @@ public partial class SettingsWindow : Window
             LunchStartTime = txtLunchStart.Text.Trim(),
             LunchDurationMinutes = lunchMinutes,
             AutoStartWithWindows = chkAutoStart.IsChecked == true,
+            PomodoroMinutes = pomodoroMinutes,
+            PomodoroDndEnabled = chkPomodoroDnd.IsChecked == true,
             WindowLeft = Settings.WindowLeft,
             WindowTop = Settings.WindowTop,
             WindowWidth = Settings.WindowWidth,
