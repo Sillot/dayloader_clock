@@ -15,6 +15,12 @@ internal sealed class SessionServiceBuilder
     private SessionStore _store = new();
     private FakeTimeProvider? _timeProvider;
 
+    public SessionServiceBuilder WithStorage(IStorageService storage)
+    {
+        _storage = storage;
+        return this;
+    }
+
     public SessionServiceBuilder WithSettings(AppSettings settings)
     {
         _settings = settings;
