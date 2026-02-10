@@ -111,12 +111,12 @@ public partial class MainWindow : Window
         menu.Items.Add(_trayStopItem);
         _trayPauseItem = new System.Windows.Forms.ToolStripMenuItem("\u23F8 Pause", null, (_, _) => Dispatcher.Invoke(() => _session.TogglePause()));
         menu.Items.Add(_trayPauseItem);
-        _trayPomodoroItem = new System.Windows.Forms.ToolStripMenuItem("🍅 Pomodoro", null, (_, _) => Dispatcher.Invoke(TogglePomodoro));
+        _trayPomodoroItem = new System.Windows.Forms.ToolStripMenuItem("Pomodoro", null, (_, _) => Dispatcher.Invoke(TogglePomodoro));
         menu.Items.Add(_trayPomodoroItem);
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-        menu.Items.Add("� Réinitialiser la journée", null, (_, _) => Dispatcher.Invoke(ResetDay));
-        menu.Items.Add("�📅 Historique", null, (_, _) => Dispatcher.Invoke(OpenHistory));
-        menu.Items.Add("⚙ Paramètres", null, (_, _) => Dispatcher.Invoke(OpenSettings));
+        menu.Items.Add("R\u00e9initialiser la journ\u00e9e", null, (_, _) => Dispatcher.Invoke(ResetDay));
+        menu.Items.Add("Historique", null, (_, _) => Dispatcher.Invoke(OpenHistory));
+        menu.Items.Add("Param\u00e8tres", null, (_, _) => Dispatcher.Invoke(OpenSettings));
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add("Quitter", null, (_, _) => Dispatcher.Invoke(ExitApp));
         _trayIcon.ContextMenuStrip = menu;
@@ -722,7 +722,7 @@ public partial class MainWindow : Window
 
         _trayIcon.ShowBalloonTip(
             3000, "Pomodoro",
-            $"\uD83C\uDF45 Focus {_settings.PomodoroMinutes} min — Ne Pas Déranger activé",
+            $"Focus {_settings.PomodoroMinutes} min — Ne Pas Déranger activé",
             System.Windows.Forms.ToolTipIcon.Info);
     }
 
@@ -738,7 +738,7 @@ public partial class MainWindow : Window
 
         btnPomodoro.Content = "\uD83C\uDF45";
         btnPomodoro.ToolTip = $"Pomodoro ({_settings.PomodoroMinutes} min)";
-        _trayPomodoroItem.Text = "\uD83C\uDF45 Pomodoro";
+        _trayPomodoroItem.Text = "Pomodoro";
         pomodoroBar.Visibility = Visibility.Collapsed;
         txtPomodoro.Text = "";
         _prevPomodoroFilled = -1;
@@ -748,7 +748,7 @@ public partial class MainWindow : Window
         {
             _trayIcon.ShowBalloonTip(
                 5000, "Pomodoro terminé !",
-                "\u2705 Bravo ! Prends une petite pause.",
+                "Bravo ! Prends une petite pause.",
                 System.Windows.Forms.ToolTipIcon.Info);
 
             // Flash the window
