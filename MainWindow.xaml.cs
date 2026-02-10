@@ -7,6 +7,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using DayloaderClock.Models;
 using DayloaderClock.Services;
+using DayloaderClock.Resources;
 using Rectangle = System.Windows.Shapes.Rectangle;
 
 namespace DayloaderClock;
@@ -72,6 +73,9 @@ public partial class MainWindow : Window
         _session.OvertimeStarted += OnOvertimeStarted;
         _session.PauseStateChanged += OnPauseStateChanged;
 
+        // Set localized Pomodoro tooltip (after _settings is loaded)
+        btnPomodoro.ToolTip = string.Format(Strings.Tooltip_Pomodoro, _settings.PomodoroMinutes);
+
         InitializeTrayIcon();
         InitializeTimer();
 
@@ -82,8 +86,8 @@ public partial class MainWindow : Window
         if (_session.IsPaused)
         {
             btnPause.Content = "\u25B6";
-            btnPause.ToolTip = "Reprendre";
-            _trayPauseItem.Text = "\u25B6 Reprendre";
+            btnPause.ToolTip = Strings.Tooltip_Resume;
+            _trayPauseItem.Text = Strings.Tray_Resume;
         }
 
         Closing += MainWindow_Closing;
@@ -105,20 +109,20 @@ public partial class MainWindow : Window
         _trayIcon.DoubleClick += (_, _) => ShowWindow();
 
         var menu = new System.Windows.Forms.ContextMenuStrip();
-        menu.Items.Add("Afficher", null, (_, _) => Dispatcher.Invoke(ShowWindow));
-        menu.Items.Add("\u25A0 Mini mode", null, (_, _) => Dispatcher.Invoke(() => { ShowWindow(); ToggleMiniMode(); }));
-        _trayStopItem = new System.Windows.Forms.ToolStripMenuItem("\u23F9 Fin de journ\u00e9e", null, (_, _) => Dispatcher.Invoke(ToggleStop));
+        menu.Items.Add(Strings.Tray_Show, null, (_, _) => Dispatcher.Invoke(ShowWindow));
+        menu.Items.Add(Strings.Tray_MiniMode, null, (_, _) => Dispatcher.Invoke(() => { ShowWindow(); ToggleMiniMode(); }));
+        _trayStopItem = new System.Windows.Forms.ToolStripMenuItem(Strings.Tray_EndDay, null, (_, _) => Dispatcher.Invoke(ToggleStop));
         menu.Items.Add(_trayStopItem);
-        _trayPauseItem = new System.Windows.Forms.ToolStripMenuItem("\u23F8 Pause", null, (_, _) => Dispatcher.Invoke(() => _session.TogglePause()));
+        _trayPauseItem = new System.Windows.Forms.ToolStripMenuItem(Strings.Tray_Pause, null, (_, _) => Dispatcher.Invoke(() => _session.TogglePause()));
         menu.Items.Add(_trayPauseItem);
-        _trayPomodoroItem = new System.Windows.Forms.ToolStripMenuItem("Pomodoro", null, (_, _) => Dispatcher.Invoke(TogglePomodoro));
+        _trayPomodoroItem = new System.Windows.Forms.ToolStripMenuItem(Strings.Tray_Pomodoro, null, (_, _) => Dispatcher.Invoke(TogglePomodoro));
         menu.Items.Add(_trayPomodoroItem);
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-        menu.Items.Add("R\u00e9initialiser la journ\u00e9e", null, (_, _) => Dispatcher.Invoke(ResetDay));
-        menu.Items.Add("Historique", null, (_, _) => Dispatcher.Invoke(OpenHistory));
-        menu.Items.Add("Param\u00e8tres", null, (_, _) => Dispatcher.Invoke(OpenSettings));
+        menu.Items.Add(Strings.Tray_ResetDay, null, (_, _) => Dispatcher.Invoke(ResetDay));
+        menu.Items.Add(Strings.Tray_History, null, (_, _) => Dispatcher.Invoke(OpenHistory));
+        menu.Items.Add(Strings.Tray_Settings, null, (_, _) => Dispatcher.Invoke(OpenSettings));
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-        menu.Items.Add("Quitter", null, (_, _) => Dispatcher.Invoke(ExitApp));
+        menu.Items.Add(Strings.Tray_Quit, null, (_, _) => Dispatcher.Invoke(ExitApp));
         _trayIcon.ContextMenuStrip = menu;
     }
 
@@ -159,7 +163,7 @@ public partial class MainWindow : Window
         var isPaused = _session.IsPaused;
 
         // ── Text labels ──
-        txtStartTime.Text = $"Début: {_session.LoginTime:HH:mm}";
+        txtStartTime.Text = string.Format(Strings.StartTime, _session.LoginTime.ToString("HH:mm"));
         txtElapsed.Text = FormatTime(effectiveWork);
 
         // Pause indicator
@@ -168,14 +172,14 @@ public partial class MainWindow : Window
         if (isOvertime)
         {
             var overtime = _session.GetOvertimeTime();
-            txtRemaining.Text = "Terminé !";
+            txtRemaining.Text = Strings.Finished;
             txtRemaining.Foreground = new SolidColorBrush(ColorOvertime);
-            txtOvertime.Text = $"\u26A0 HEURES SUP: +{FormatTime(overtime)}";
+            txtOvertime.Text = string.Format(Strings.Overtime, FormatTime(overtime));
             txtOvertime.Visibility = Visibility.Visible;
         }
         else
         {
-            txtRemaining.Text = $"Reste: {FormatTime(remaining)}";
+            txtRemaining.Text = string.Format(Strings.Remaining, FormatTime(remaining));
             txtRemaining.Foreground = new SolidColorBrush(Color.FromRgb(107, 80, 53));
             txtOvertime.Visibility = Visibility.Collapsed;
         }
@@ -195,19 +199,19 @@ public partial class MainWindow : Window
             if (isOvertime)
             {
                 var ot = _session.GetOvertimeTime();
-                txtMiniPercent.Text = $"DONE  +{FormatTime(ot)}";
+                txtMiniPercent.Text = string.Format(Strings.Mini_Done, FormatTime(ot));
             }
             else if (_isStopped)
             {
-                txtMiniPercent.Text = $"{displayPercent:0}%  ■ STOP";
+                txtMiniPercent.Text = string.Format(Strings.Mini_Stop, displayPercent.ToString("0"));
             }
             else if (isPaused)
             {
-                txtMiniPercent.Text = $"{displayPercent:0}%  ⏸ {FormatTime(remaining)}";
+                txtMiniPercent.Text = string.Format(Strings.Mini_Paused, displayPercent.ToString("0"), FormatTime(remaining));
             }
             else
             {
-                txtMiniPercent.Text = $"{displayPercent:0}%  —  {FormatTime(remaining)}";
+                txtMiniPercent.Text = string.Format(Strings.Mini_Normal, displayPercent.ToString("0"), FormatTime(remaining));
             }
         }
 
@@ -453,6 +457,24 @@ public partial class MainWindow : Window
         {
             _settings = win.Settings;
             StorageService.SaveSettings(_settings);
+
+            if (win.LanguageChanged)
+            {
+                // Restart the app to apply the new language
+                var exePath = Environment.ProcessPath;
+                if (!string.IsNullOrEmpty(exePath))
+                {
+                    // Start new instance with a small delay so the mutex is released
+                    var psi = new System.Diagnostics.ProcessStartInfo(exePath)
+                    {
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                    System.Windows.Application.Current.Shutdown();
+                    return;
+                }
+            }
+
             _session.UpdateSettings(_settings);
             UpdateDisplay();
         }
@@ -470,9 +492,9 @@ public partial class MainWindow : Window
         Dispatcher.Invoke(() =>
         {
             btnPause.Content = isPaused ? "\u25B6" : "\u23F8";
-            btnPause.ToolTip = isPaused ? "Reprendre" : "Pause";
+            btnPause.ToolTip = isPaused ? Strings.Tooltip_Resume : Strings.Tooltip_Pause;
             txtPauseIndicator.Visibility = (isPaused && !_isStopped) ? Visibility.Visible : Visibility.Collapsed;
-            _trayPauseItem.Text = isPaused ? "\u25B6 Reprendre" : "\u23F8 Pause";
+            _trayPauseItem.Text = isPaused ? Strings.Tray_Resume : Strings.Tray_Pause;
             _trayPauseItem.Visible = !_isStopped;
             UpdateDisplay();
         });
@@ -497,7 +519,7 @@ public partial class MainWindow : Window
         _trayIcon.ShowBalloonTip(
             5000,
             "Dayloader Clock",
-            "\u26A0 Journée de travail terminée ! Les heures supplémentaires commencent.",
+            Strings.Msg_OvertimeStarted,
             System.Windows.Forms.ToolTipIcon.Warning);
     }
 
@@ -567,12 +589,12 @@ public partial class MainWindow : Window
 
         // UI updates
         btnStop.Content = "\u25B6";  // ▶
-        btnStop.ToolTip = "Reprendre la journ\u00e9e";
+        btnStop.ToolTip = Strings.Tooltip_ResumeDay;
         btnPause.IsEnabled = false;
         _trayPauseItem.Visible = false;
         txtPauseIndicator.Visibility = Visibility.Collapsed;
         txtStopIndicator.Visibility = Visibility.Visible;
-        _trayStopItem.Text = "\u25B6 Reprendre";
+        _trayStopItem.Text = Strings.Tray_Resume;
 
         // Minimize to tray
         Hide();
@@ -588,18 +610,18 @@ public partial class MainWindow : Window
 
         // UI updates
         btnStop.Content = "\u23F9";  // ⏹
-        btnStop.ToolTip = "Fin de journ\u00e9e";
+        btnStop.ToolTip = Strings.Tooltip_EndDay;
         btnPause.IsEnabled = true;
         _trayPauseItem.Visible = true;
         txtStopIndicator.Visibility = Visibility.Collapsed;
-        _trayStopItem.Text = "\u23F9 Fin de journ\u00e9e";
+        _trayStopItem.Text = Strings.Tray_EndDay;
 
         ShowWindow();
     }
 
     private void ResetDay()
     {
-        var result = MessageBox.Show("Réinitialiser la journée ?\nLe compteur sera remis à zéro.",
+        var result = MessageBox.Show(Strings.Msg_ResetConfirm,
             "Dayloader Clock", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (result != MessageBoxResult.Yes) return;
 
@@ -613,16 +635,16 @@ public partial class MainWindow : Window
 
         // Reset UI
         btnStop.Content = "\u23F9";
-        btnStop.ToolTip = "Fin de journée";
+        btnStop.ToolTip = Strings.Tooltip_EndDay;
         btnPause.IsEnabled = true;
         btnPause.Content = "\u23F8";
-        btnPause.ToolTip = "Pause";
+        btnPause.ToolTip = Strings.Tooltip_Pause;
         txtPauseIndicator.Visibility = Visibility.Collapsed;
         txtStopIndicator.Visibility = Visibility.Collapsed;
-        _trayPauseItem.Text = "\u23F8 Pause";
+        _trayPauseItem.Text = Strings.Tray_Pause;
         _trayPauseItem.Visible = true;
-        _trayStopItem.Text = "\u23F9 Fin de journée";
-        txtStartTime.Text = $"Début: {_session.LoginTime:HH:mm}";
+        _trayStopItem.Text = Strings.Tray_EndDay;
+        txtStartTime.Text = string.Format(Strings.StartTime, _session.LoginTime.ToString("HH:mm"));
 
         UpdateDisplay();
     }
@@ -710,8 +732,8 @@ public partial class MainWindow : Window
 
         // Visual feedback
         btnPomodoro.Content = "\u23F9";  // ⏹
-        btnPomodoro.ToolTip = "Arrêter le Pomodoro";
-        _trayPomodoroItem.Text = "\u23F9 Arrêter Pomodoro";
+        btnPomodoro.ToolTip = Strings.Tooltip_StopPomodoro;
+        _trayPomodoroItem.Text = Strings.Tray_StopPomodoro;
 
         // Dedicated 1-second timer for countdown
         _pomodoroTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
@@ -722,7 +744,7 @@ public partial class MainWindow : Window
 
         _trayIcon.ShowBalloonTip(
             3000, "Pomodoro",
-            $"Focus {_settings.PomodoroMinutes} min — Ne Pas Déranger activé",
+            string.Format(Strings.Msg_PomodoroFocus, _settings.PomodoroMinutes),
             System.Windows.Forms.ToolTipIcon.Info);
     }
 
@@ -737,8 +759,8 @@ public partial class MainWindow : Window
             FocusService.DisableDnd();
 
         btnPomodoro.Content = "\uD83C\uDF45";
-        btnPomodoro.ToolTip = $"Pomodoro ({_settings.PomodoroMinutes} min)";
-        _trayPomodoroItem.Text = "Pomodoro";
+        btnPomodoro.ToolTip = string.Format(Strings.Tooltip_Pomodoro, _settings.PomodoroMinutes);
+        _trayPomodoroItem.Text = Strings.Tray_Pomodoro;
         pomodoroBar.Visibility = Visibility.Collapsed;
         txtPomodoro.Text = "";
         _prevPomodoroFilled = -1;
@@ -747,8 +769,8 @@ public partial class MainWindow : Window
         if (!cancelled)
         {
             _trayIcon.ShowBalloonTip(
-                5000, "Pomodoro terminé !",
-                "Bravo ! Prends une petite pause.",
+                5000, Strings.Msg_PomodoroCompleted,
+                Strings.Msg_PomodoroBreak,
                 System.Windows.Forms.ToolTipIcon.Info);
 
             // Flash the window

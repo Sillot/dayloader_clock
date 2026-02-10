@@ -1,4 +1,7 @@
+using System.Globalization;
+using System.Threading;
 using System.Windows;
+using DayloaderClock.Resources;
 using DayloaderClock.Services;
 using Microsoft.Win32;
 
@@ -10,13 +13,23 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Apply language setting before any UI is created
+        ApplyLanguageSetting();
+
         const string mutexName = "DayloaderClock_SingleInstance_Mutex";
         _mutex = new Mutex(true, mutexName, out bool createdNew);
 
         if (!createdNew)
         {
+            // Wait briefly in case this is a language-change restart
+            Thread.Sleep(1500);
+            _mutex = new Mutex(true, mutexName, out createdNew);
+        }
+
+        if (!createdNew)
+        {
             MessageBox.Show(
-                "Dayloader Clock est déjà en cours d'exécution.\nVérifiez la barre des tâches (system tray).",
+                Strings.Msg_AlreadyRunning,
                 "Dayloader Clock",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
@@ -38,6 +51,30 @@ public partial class App : Application
         _mutex?.ReleaseMutex();
         _mutex?.Dispose();
         base.OnExit(e);
+    }
+
+    /// <summary>
+    /// Apply the user's language preference before any UI is created.
+    /// "auto" = use system default, otherwise set the specified culture.
+    /// </summary>
+    private static void ApplyLanguageSetting()
+    {
+        try
+        {
+            var settings = StorageService.LoadSettings();
+            if (settings.Language != "auto" && !string.IsNullOrEmpty(settings.Language))
+            {
+                var culture = new CultureInfo(settings.Language);
+                Thread.CurrentThread.CurrentUICulture = culture;
+                Thread.CurrentThread.CurrentCulture = culture;
+                CultureInfo.DefaultThreadCurrentUICulture = culture;
+                CultureInfo.DefaultThreadCurrentCulture = culture;
+            }
+        }
+        catch
+        {
+            // If the culture code is invalid, just use system default
+        }
     }
 
     /// <summary>

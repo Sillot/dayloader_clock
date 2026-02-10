@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- MainWindow                                                 -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <data name="AppTitle" xml:space="preserve"><value>THE DAYLOADER CLOCK</value></data>
+  <data name="Tooltip_EndDay" xml:space="preserve"><value>Fin de journée</value></data>
+  <data name="Tooltip_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Tooltip_History" xml:space="preserve"><value>Historique</value></data>
+  <data name="Tooltip_Settings" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="Tooltip_Minimize" xml:space="preserve"><value>Réduire</value></data>
+  <data name="Tooltip_Hide" xml:space="preserve"><value>Masquer</value></data>
+  <data name="Tooltip_Resume" xml:space="preserve"><value>Reprendre</value></data>
+  <data name="Tooltip_ResumeDay" xml:space="preserve"><value>Reprendre la journée</value></data>
+  <data name="Tooltip_Pomodoro" xml:space="preserve"><value>Pomodoro ({0} min)</value></data>
+  <data name="Tooltip_StopPomodoro" xml:space="preserve"><value>Arrêter le Pomodoro</value></data>
+
+  <data name="StartTime" xml:space="preserve"><value>Début : {0}</value></data>
+  <data name="StartTimeDefault" xml:space="preserve"><value>Début : --:--</value></data>
+  <data name="Remaining" xml:space="preserve"><value>Reste : {0}</value></data>
+  <data name="RemainingDefault" xml:space="preserve"><value>Reste : 8h 00m</value></data>
+  <data name="Finished" xml:space="preserve"><value>Terminé !</value></data>
+  <data name="Overtime" xml:space="preserve"><value>⚠ HEURES SUP : +{0}</value></data>
+  <data name="LunchPause" xml:space="preserve"><value>🍴 PAUSE</value></data>
+  <data name="DayCompleted" xml:space="preserve"><value>⏹ JOURNÉE TERMINÉE</value></data>
+  <data name="Paused" xml:space="preserve"><value>⏸ EN PAUSE</value></data>
+
+  <data name="Mini_Done" xml:space="preserve"><value>FINI  +{0}</value></data>
+  <data name="Mini_Stop" xml:space="preserve"><value>{0}%  ■ STOP</value></data>
+  <data name="Mini_Paused" xml:space="preserve"><value>{0}%  ⏸ {1}</value></data>
+  <data name="Mini_Normal" xml:space="preserve"><value>{0}%  —  {1}</value></data>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- System Tray                                                -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <data name="Tray_Show" xml:space="preserve"><value>Afficher</value></data>
+  <data name="Tray_MiniMode" xml:space="preserve"><value>■ Mini mode</value></data>
+  <data name="Tray_EndDay" xml:space="preserve"><value>⏹ Fin de journée</value></data>
+  <data name="Tray_Pause" xml:space="preserve"><value>⏸ Pause</value></data>
+  <data name="Tray_Resume" xml:space="preserve"><value>▶ Reprendre</value></data>
+  <data name="Tray_Pomodoro" xml:space="preserve"><value>Pomodoro</value></data>
+  <data name="Tray_StopPomodoro" xml:space="preserve"><value>⏹ Arrêter Pomodoro</value></data>
+  <data name="Tray_ResetDay" xml:space="preserve"><value>Réinitialiser la journée</value></data>
+  <data name="Tray_History" xml:space="preserve"><value>Historique</value></data>
+  <data name="Tray_Settings" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="Tray_Quit" xml:space="preserve"><value>Quitter</value></data>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- Messages / Notifications                                   -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <data name="Msg_ResetConfirm" xml:space="preserve"><value>Réinitialiser la journée ?
+Le compteur sera remis à zéro.</value></data>
+  <data name="Msg_OvertimeStarted" xml:space="preserve"><value>⚠ Journée de travail terminée ! Les heures supplémentaires commencent.</value></data>
+  <data name="Msg_PomodoroFocus" xml:space="preserve"><value>Focus {0} min — Ne Pas Déranger activé</value></data>
+  <data name="Msg_PomodoroCompleted" xml:space="preserve"><value>Pomodoro terminé !</value></data>
+  <data name="Msg_PomodoroBreak" xml:space="preserve"><value>Bravo ! Prends une petite pause.</value></data>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- Settings Window                                            -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <data name="Settings_Title" xml:space="preserve"><value>Paramètres — Dayloader Clock</value></data>
+  <data name="Settings_Header" xml:space="preserve"><value>⚙  PARAMÈTRES</value></data>
+  <data name="Settings_WorkDayHours" xml:space="preserve"><value>Durée journée de travail (heures)</value></data>
+  <data name="Settings_LunchStart" xml:space="preserve"><value>Début pause déjeuner (HH:mm)</value></data>
+  <data name="Settings_LunchDuration" xml:space="preserve"><value>Durée pause déjeuner (minutes)</value></data>
+  <data name="Settings_AutoStart" xml:space="preserve"><value>  Démarrer automatiquement avec Windows</value></data>
+  <data name="Settings_PomodoroDuration" xml:space="preserve"><value>Durée Pomodoro (minutes)</value></data>
+  <data name="Settings_PomodoroDnd" xml:space="preserve"><value>  Activer Ne Pas Déranger pendant Pomodoro</value></data>
+  <data name="Settings_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Settings_Save" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Langue</value></data>
+  <data name="Settings_RestartRequired" xml:space="preserve"><value>Le changement de langue sera appliqué après redémarrage de l'application.</value></data>
+  <data name="Settings_Error_WorkHours" xml:space="preserve"><value>Heures de travail invalides (entre 1 et 24).</value></data>
+  <data name="Settings_Error_LunchStart" xml:space="preserve"><value>Heure de début de pause invalide (format HH:mm).</value></data>
+  <data name="Settings_Error_LunchDuration" xml:space="preserve"><value>Durée de pause invalide (entre 0 et 180 minutes).</value></data>
+  <data name="Settings_Error_Pomodoro" xml:space="preserve"><value>Durée Pomodoro invalide (entre 1 et 120 minutes).</value></data>
+  <data name="Settings_Error_Title" xml:space="preserve"><value>Erreur de validation</value></data>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- History Window                                             -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <data name="History_Title" xml:space="preserve"><value>Historique — Dayloader Clock</value></data>
+  <data name="History_Header" xml:space="preserve"><value>📅  HISTORIQUE</value></data>
+  <data name="History_Days" xml:space="preserve"><value>JOURS</value></data>
+  <data name="History_Total" xml:space="preserve"><value>TOTAL</value></data>
+  <data name="History_Average" xml:space="preserve"><value>MOY/JOUR</value></data>
+  <data name="History_ExportCsv" xml:space="preserve"><value>📄 Exporter CSV</value></data>
+  <data name="History_ExportXlsx" xml:space="preserve"><value>📊 Exporter Excel</value></data>
+  <data name="History_Tooltip" xml:space="preserve"><value>{0}
+Login : {1}
+Dernière activité : {2}
+Travail effectif : {3}</value></data>
+  <data name="History_CsvDialogTitle" xml:space="preserve"><value>Exporter l'historique en CSV</value></data>
+  <data name="History_XlsxDialogTitle" xml:space="preserve"><value>Exporter l'historique en Excel</value></data>
+  <data name="History_ExportSuccess" xml:space="preserve"><value>Export {0} réussi !
+{1}</value></data>
+  <data name="History_ExportTitle" xml:space="preserve"><value>Export</value></data>
+  <data name="History_ExportError" xml:space="preserve"><value>Erreur lors de l'export :
+{0}</value></data>
+  <data name="History_ErrorTitle" xml:space="preserve"><value>Erreur</value></data>
+  <data name="History_Yes" xml:space="preserve"><value>Oui</value></data>
+  <data name="History_No" xml:space="preserve"><value>Non</value></data>
+
+  <!-- Day abbreviations -->
+  <data name="Day_Mon" xml:space="preserve"><value>LUN</value></data>
+  <data name="Day_Tue" xml:space="preserve"><value>MAR</value></data>
+  <data name="Day_Wed" xml:space="preserve"><value>MER</value></data>
+  <data name="Day_Thu" xml:space="preserve"><value>JEU</value></data>
+  <data name="Day_Fri" xml:space="preserve"><value>VEN</value></data>
+  <data name="Day_Sat" xml:space="preserve"><value>SAM</value></data>
+  <data name="Day_Sun" xml:space="preserve"><value>DIM</value></data>
+
+  <!-- Export column headers -->
+  <data name="Export_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Export_Login" xml:space="preserve"><value>Login</value></data>
+  <data name="Export_LastActivity" xml:space="preserve"><value>Dernière activité</value></data>
+  <data name="Export_MinutesWorked" xml:space="preserve"><value>Minutes travaillées</value></data>
+  <data name="Export_HoursWorked" xml:space="preserve"><value>Heures travaillées</value></data>
+  <data name="Export_DayComplete" xml:space="preserve"><value>Journée complète</value></data>
+  <data name="Export_SheetName" xml:space="preserve"><value>Historique</value></data>
+
+  <!-- Messages -->
+  <data name="Msg_AlreadyRunning" xml:space="preserve"><value>Dayloader Clock est déjà en cours d'exécution.
+Vérifiez la barre des tâches (system tray).</value></data>
+</root>

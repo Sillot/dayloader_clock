@@ -35,6 +35,9 @@ public class AppSettings
     /// <summary>Whether to enable Windows Do Not Disturb during Pomodoro</summary>
     public bool PomodoroDndEnabled { get; set; } = true;
 
+    /// <summary>UI language override: "auto" = system default, or a culture code like "en", "fr", "es"</summary>
+    public string Language { get; set; } = "auto";
+
     public TimeSpan GetLunchStart()
     {
         return TimeSpan.TryParse(LunchStartTime, out var ts) ? ts : new TimeSpan(12, 0, 0);

@@ -9,6 +9,7 @@ using System.Windows.Media.Effects;
 using ClosedXML.Excel;
 using DayloaderClock.Models;
 using DayloaderClock.Services;
+using DayloaderClock.Resources;
 using Microsoft.Win32;
 using FontFamily = System.Windows.Media.FontFamily;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
@@ -29,11 +30,6 @@ public partial class HistoryWindow : Window
     private static readonly SolidColorBrush BrushOutside = new(Color.FromRgb(107, 80, 53));     // #6B5035
     private static readonly SolidColorBrush BrushHoursText = new(Color.FromRgb(232, 213, 184)); // #E8D5B8
 
-    private static readonly string[] FrenchMonths =
-    [
-        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
-    ];
 
     /// <summary>Format minutes as "Xh YYmin" (e.g. 1h 30min, 45min, 8h 00min)</summary>
     private static string FormatDuration(double totalMinutes)
@@ -92,7 +88,7 @@ public partial class HistoryWindow : Window
     {
         calendarGrid.Children.Clear();
 
-        txtMonth.Text = $"{FrenchMonths[_displayedMonth.Month - 1]} {_displayedMonth.Year}";
+        txtMonth.Text = $"{CultureInfo.CurrentUICulture.DateTimeFormat.GetMonthName(_displayedMonth.Month)} {_displayedMonth.Year}";
 
         // Day of week the month starts on (Monday=0 ... Sunday=6)
         var firstDay = _displayedMonth;
@@ -183,10 +179,9 @@ public partial class HistoryWindow : Window
                     var lastActivity = DateTime.TryParse(session.LastActivityTime, out var lastDt)
                         ? lastDt.ToString("HH:mm") : "?";
 
-                    cell.ToolTip = $"{date:dd/MM/yyyy}\n" +
-                                   $"Login: {login}\n" +
-                                   $"Dernière activité: {lastActivity}\n" +
-                                   $"Travail effectif: {FormatDuration(session.TotalEffectiveWorkMinutes)}";
+                    cell.ToolTip = string.Format(Strings.History_Tooltip,
+                        date.ToString("dd/MM/yyyy"), login, lastActivity,
+                        FormatDuration(session.TotalEffectiveWorkMinutes));
                 }
                 else
                 {
@@ -288,7 +283,7 @@ public partial class HistoryWindow : Window
         {
             Filter = "CSV (*.csv)|*.csv",
             FileName = $"dayloader_{DateTime.Today:yyyy-MM-dd}.csv",
-            Title = "Exporter l'historique en CSV"
+            Title = Strings.History_CsvDialogTitle
         };
 
         if (dlg.ShowDialog() != true) return;
@@ -297,24 +292,24 @@ public partial class HistoryWindow : Window
         {
             var sessions = GetAllSortedSessions();
             var sb = new StringBuilder();
-            sb.AppendLine("Date;Login;Dernière activité;Minutes travaillées;Heures travaillées;Journée complète");
+            sb.AppendLine($"{Strings.Export_Date};{Strings.Export_Login};{Strings.Export_LastActivity};{Strings.Export_MinutesWorked};{Strings.Export_HoursWorked};{Strings.Export_DayComplete}");
 
             foreach (var s in sessions)
             {
                 var login = DateTime.TryParse(s.FirstLoginTime, out var lt) ? lt.ToString("HH:mm") : "";
                 var last = DateTime.TryParse(s.LastActivityTime, out var at) ? at.ToString("HH:mm") : "";
                 double hours = s.TotalEffectiveWorkMinutes / 60.0;
-                sb.AppendLine($"{s.Date};{login};{last};{s.TotalEffectiveWorkMinutes:F0};{hours:F2};{(s.DayCompleted ? "Oui" : "Non")}");
+                sb.AppendLine($"{s.Date};{login};{last};{s.TotalEffectiveWorkMinutes:F0};{hours:F2};{(s.DayCompleted ? Strings.History_Yes : Strings.History_No)}");
             }
 
             File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
-            System.Windows.MessageBox.Show($"Export CSV réussi !\n{dlg.FileName}",
-                "Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(string.Format(Strings.History_ExportSuccess, "CSV", dlg.FileName),
+                Strings.History_ExportTitle, MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Erreur lors de l'export :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(string.Format(Strings.History_ExportError, ex.Message),
+                Strings.History_ErrorTitle, MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -324,7 +319,7 @@ public partial class HistoryWindow : Window
         {
             Filter = "Excel (*.xlsx)|*.xlsx",
             FileName = $"dayloader_{DateTime.Today:yyyy-MM-dd}.xlsx",
-            Title = "Exporter l'historique en Excel"
+            Title = Strings.History_XlsxDialogTitle
         };
 
         if (dlg.ShowDialog() != true) return;
@@ -334,10 +329,10 @@ public partial class HistoryWindow : Window
             var sessions = GetAllSortedSessions();
 
             using var wb = new XLWorkbook();
-            var ws = wb.Worksheets.Add("Historique");
+            var ws = wb.Worksheets.Add(Strings.Export_SheetName);
 
             // Header
-            var headers = new[] { "Date", "Login", "Dernière activité", "Minutes", "Heures", "Complète" };
+            var headers = new[] { Strings.Export_Date, Strings.Export_Login, Strings.Export_LastActivity, Strings.Export_MinutesWorked, Strings.Export_HoursWorked, Strings.Export_DayComplete };
             for (int c = 0; c < headers.Length; c++)
             {
                 var cell = ws.Cell(1, c + 1);
@@ -361,7 +356,7 @@ public partial class HistoryWindow : Window
                 ws.Cell(row, 3).Value = last;
                 ws.Cell(row, 4).Value = Math.Round(s.TotalEffectiveWorkMinutes);
                 ws.Cell(row, 5).Value = Math.Round(hours, 2);
-                ws.Cell(row, 6).Value = s.DayCompleted ? "Oui" : "Non";
+                ws.Cell(row, 6).Value = s.DayCompleted ? Strings.History_Yes : Strings.History_No;
 
                 // Color row by hours
                 if (hours >= 8)
@@ -373,13 +368,13 @@ public partial class HistoryWindow : Window
             ws.Columns().AdjustToContents();
             wb.SaveAs(dlg.FileName);
 
-            System.Windows.MessageBox.Show($"Export Excel réussi !\n{dlg.FileName}",
-                "Export", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(string.Format(Strings.History_ExportSuccess, "Excel", dlg.FileName),
+                Strings.History_ExportTitle, MessageBoxButton.OK, MessageBoxImage.Information);
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Erreur lors de l'export :\n{ex.Message}",
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(string.Format(Strings.History_ExportError, ex.Message),
+                Strings.History_ErrorTitle, MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

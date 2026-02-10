@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using DayloaderClock.Models;
+using DayloaderClock.Resources;
 using Microsoft.Win32;
 
 namespace DayloaderClock;
@@ -9,6 +10,16 @@ namespace DayloaderClock;
 public partial class SettingsWindow : Window
 {
     public AppSettings Settings { get; private set; }
+    public bool LanguageChanged { get; private set; }
+
+    /// <summary>Available languages: code → display name</summary>
+    private static readonly (string Code, string Name)[] Languages =
+    [
+        ("auto", "🌐 Auto (system)"),
+        ("en", "🇬🇧 English"),
+        ("fr", "🇫🇷 Français"),
+        ("es", "🇪🇸 Español")
+    ];
 
     public SettingsWindow(AppSettings currentSettings)
     {
@@ -26,6 +37,12 @@ public partial class SettingsWindow : Window
         chkAutoStart.IsChecked = currentSettings.AutoStartWithWindows;
         txtPomodoro.Text = currentSettings.PomodoroMinutes.ToString();
         chkPomodoroDnd.IsChecked = currentSettings.PomodoroDndEnabled;
+
+        // Language picker
+        foreach (var (code, name) in Languages)
+            cmbLanguage.Items.Add(new System.Windows.Controls.ComboBoxItem { Tag = code, Content = name });
+        var selectedIndex = Array.FindIndex(Languages, l => l.Code == currentSettings.Language);
+        cmbLanguage.SelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -39,31 +56,34 @@ public partial class SettingsWindow : Window
                 out double workHours)
             || workHours <= 0 || workHours > 24)
         {
-            ShowError("Heures de travail invalides (entre 1 et 24).");
+            ShowError(Strings.Settings_Error_WorkHours);
             return;
         }
 
         if (!TimeSpan.TryParse(txtLunchStart.Text, out _))
         {
-            ShowError("Heure de début de pause invalide (format HH:mm).");
+            ShowError(Strings.Settings_Error_LunchStart);
             return;
         }
 
         if (!int.TryParse(txtLunchDuration.Text, out int lunchMinutes)
             || lunchMinutes < 0 || lunchMinutes > 180)
         {
-            ShowError("Durée de pause invalide (entre 0 et 180 minutes).");
+            ShowError(Strings.Settings_Error_LunchDuration);
             return;
         }
 
         if (!int.TryParse(txtPomodoro.Text, out int pomodoroMinutes)
             || pomodoroMinutes < 1 || pomodoroMinutes > 120)
         {
-            ShowError("Durée Pomodoro invalide (entre 1 et 120 minutes).");
+            ShowError(Strings.Settings_Error_Pomodoro);
             return;
         }
 
         // ── Apply ──
+
+        var selectedLang = (cmbLanguage.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string ?? "auto";
+        bool languageChanged = selectedLang != Settings.Language;
 
         Settings = new AppSettings
         {
@@ -73,6 +93,7 @@ public partial class SettingsWindow : Window
             AutoStartWithWindows = chkAutoStart.IsChecked == true,
             PomodoroMinutes = pomodoroMinutes,
             PomodoroDndEnabled = chkPomodoroDnd.IsChecked == true,
+            Language = selectedLang,
             WindowLeft = Settings.WindowLeft,
             WindowTop = Settings.WindowTop,
             WindowWidth = Settings.WindowWidth,
@@ -80,6 +101,8 @@ public partial class SettingsWindow : Window
         };
 
         SetAutoStart(Settings.AutoStartWithWindows);
+
+        LanguageChanged = languageChanged;
 
         DialogResult = true;
         Close();
@@ -101,7 +124,7 @@ public partial class SettingsWindow : Window
 
     private static void ShowError(string message)
     {
-        MessageBox.Show(message, "Erreur de validation",
+        MessageBox.Show(message, Strings.Settings_Error_Title,
             MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
