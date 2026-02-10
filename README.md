@@ -3,6 +3,10 @@
 A Windows desktop app inspired by the **Dayloader Clock** concept by [Matty Benedetto](https://www.youtube.com/@MattBenedetto).
 A visual progress bar of your workday that fills up segment by segment with a color gradient (green → yellow → orange → red).
 
+> 🤖 **Coded** with [Claude Opus 4.6](https://www.anthropic.com/) via GitHub Copilot
+>
+> 🔒 **100% local** — no data is collected, no network calls, everything stays on your machine
+>
 > Requires Windows 10/11 — .NET 8
 
 ## Features
