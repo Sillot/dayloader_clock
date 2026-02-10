@@ -281,7 +281,7 @@ public class SessionService
     public bool IsOvertime => GetEffectiveWorkTime().TotalMinutes > _settings.WorkDayMinutes;
 
     /// <summary>Whether we are currently in the configured lunch time window.</summary>
-    private bool IsInLunchWindow
+    public bool IsInLunchWindow
     {
         get
         {
@@ -291,7 +291,10 @@ public class SessionService
     }
 
     /// <summary>Whether the user is currently on lunch (screen locked during lunch window).</summary>
-    public bool IsLunchTime => _isOnLunch && _isScreenLocked;
+    public bool IsOnLunchBreak => _isOnLunch && _isScreenLocked;
+
+    /// <summary>Whether we're in the lunch window — used for the UI indicator.</summary>
+    public bool IsLunchTime => IsInLunchWindow;
 
     /// <summary>
     /// Estimated departure time, accounting for remaining lunch if applicable.
