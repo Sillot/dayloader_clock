@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace DayloaderClock.Models;
 
 /// <summary>
@@ -40,7 +42,7 @@ public class AppSettings
 
     public TimeSpan GetLunchStart()
     {
-        return TimeSpan.TryParse(LunchStartTime, out var ts) ? ts : new TimeSpan(12, 0, 0);
+        return TimeSpan.TryParse(LunchStartTime, CultureInfo.InvariantCulture, out var ts) ? ts : new TimeSpan(12, 0, 0);
     }
 
     public TimeSpan GetLunchEnd()

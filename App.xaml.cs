@@ -7,9 +7,12 @@ using Microsoft.Win32;
 
 namespace DayloaderClock;
 
+// CA1001: _mutex is disposed in OnExit — WPF Application should not implement IDisposable
+#pragma warning disable CA1001
 public partial class App : Application
+#pragma warning restore CA1001
 {
-    private static Mutex? _mutex;
+    private Mutex? _mutex;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -61,7 +64,7 @@ public partial class App : Application
     {
         try
         {
-            var settings = StorageService.LoadSettings();
+            var settings = StorageService.Instance.LoadSettings();
             if (settings.Language != "auto" && !string.IsNullOrEmpty(settings.Language))
             {
                 var culture = new CultureInfo(settings.Language);
@@ -85,7 +88,7 @@ public partial class App : Application
     {
         try
         {
-            var settings = StorageService.LoadSettings();
+            var settings = StorageService.Instance.LoadSettings();
             using var key = Registry.CurrentUser.OpenSubKey(
                 @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
             if (key == null) return;

@@ -1,3 +1,4 @@
+using System.Globalization;
 using DayloaderClock.Models;
 using Microsoft.Win32;
 
@@ -8,12 +9,12 @@ namespace DayloaderClock.Services;
 /// Calculates effective work time, progress, overtime, and estimated end time.
 /// Lunch break is detected via screen lock/unlock during the configured lunch window.
 /// </summary>
-public class SessionService
+public class SessionService : IDisposable
 {
     private AppSettings _settings;
     private readonly IStorageService _storage;
     private readonly TimeProvider _timeProvider;
-    private SessionStore _store;
+    private readonly SessionStore _store;
     private string _currentDate;
     private bool _overtimeNotified;
 
@@ -69,9 +70,11 @@ public class SessionService
         SystemEvents.SessionSwitch += OnSessionSwitch;
     }
 
-    ~SessionService()
+    /// <inheritdoc/>
+    public void Dispose()
     {
         SystemEvents.SessionSwitch -= OnSessionSwitch;
+        GC.SuppressFinalize(this);
     }
 
     private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
@@ -85,23 +88,20 @@ public class SessionService
             if (IsInLunchWindow)
                 _isOnLunch = true;
         }
-        else if (e.Reason == SessionSwitchReason.SessionUnlock)
+        else if (e.Reason == SessionSwitchReason.SessionUnlock && _isScreenLocked)
         {
-            if (_isScreenLocked)
+            var lockDuration = Now - _lockTimeStamp;
+
+            if (_isOnLunch)
             {
-                var lockDuration = Now - _lockTimeStamp;
-
-                if (_isOnLunch)
-                {
-                    // All time spent locked counts as lunch (capped to configured max)
-                    var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
-                    var lunchSoFar = _totalLunchTime + lockDuration;
-                    _totalLunchTime = lunchSoFar > maxLunch ? maxLunch : lunchSoFar;
-                    _isOnLunch = false;
-                }
-
-                _isScreenLocked = false;
+                // All time spent locked counts as lunch (capped to configured max)
+                var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+                var lunchSoFar = _totalLunchTime + lockDuration;
+                _totalLunchTime = lunchSoFar > maxLunch ? maxLunch : lunchSoFar;
+                _isOnLunch = false;
             }
+
+            _isScreenLocked = false;
         }
     }
 
@@ -112,14 +112,14 @@ public class SessionService
         if (_store.CurrentSession != null && _store.CurrentSession.Date == _currentDate)
         {
             // Resume today's session
-            LoginTime = DateTime.Parse(_store.CurrentSession.FirstLoginTime);
+            LoginTime = DateTime.Parse(_store.CurrentSession.FirstLoginTime, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
 
             // Restore paused time from disk
             _totalPausedTime = TimeSpan.FromMinutes(_store.CurrentSession.TotalPausedMinutes);
             if (_store.CurrentSession.IsPaused && _store.CurrentSession.PauseStartTime != null)
             {
                 _isPaused = true;
-                _pauseStartTime = DateTime.Parse(_store.CurrentSession.PauseStartTime);
+                _pauseStartTime = DateTime.Parse(_store.CurrentSession.PauseStartTime, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
             }
 
             // Restore lunch time from disk

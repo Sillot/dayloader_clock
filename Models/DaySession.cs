@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace DayloaderClock.Models;
 
 /// <summary>
@@ -39,11 +41,11 @@ public class DaySession
 
     /// <summary>Login time formatted as HH:mm, or fallback if unparseable.</summary>
     public string GetLoginFormatted(string fallback = "?")
-        => DateTime.TryParse(FirstLoginTime, out var dt) ? dt.ToString("HH:mm") : fallback;
+        => DateTime.TryParse(FirstLoginTime, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dt) ? dt.ToString("HH:mm") : fallback;
 
     /// <summary>Last activity time formatted as HH:mm, or fallback.</summary>
     public string GetLastActivityFormatted(string fallback = "?")
-        => DateTime.TryParse(LastActivityTime, out var dt) ? dt.ToString("HH:mm") : fallback;
+        => DateTime.TryParse(LastActivityTime, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dt) ? dt.ToString("HH:mm") : fallback;
 }
 
 /// <summary>

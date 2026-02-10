@@ -60,7 +60,7 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        if (!TimeSpan.TryParse(txtLunchStart.Text, out _))
+        if (!TimeSpan.TryParse(txtLunchStart.Text, CultureInfo.InvariantCulture, out _))
         {
             ShowError(Strings.Settings_Error_LunchStart);
             return;

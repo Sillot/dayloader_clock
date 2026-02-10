@@ -30,7 +30,7 @@ A visual progress bar of your workday that fills up segment by segment with a co
 ## Settings
 
 | Setting | Default |
-|---|---|
+| --- | --- |
 | Work day duration | 8h |
 | Lunch break start | 12:00 |
 | Lunch break duration | 60 min |

@@ -332,7 +332,7 @@ public class SessionServiceTests
         svc.Pause();
         svc.Resume();
 
-        Assert.Equal(new[] { true, false }, states);
+        Assert.Equal([true, false], states);
     }
 
     // ── ResetDay ─────────────────────────────────────────────
@@ -340,7 +340,7 @@ public class SessionServiceTests
     [Fact]
     public void ResetDay_ClearsAllState()
     {
-        var (svc, time, storage) = new SessionServiceBuilder()
+        var (svc, time, _) = new SessionServiceBuilder()
             .WithTime(new DateTimeOffset(2026, 2, 10, 8, 0, 0, TimeSpan.FromHours(1)))
             .WithSettings(s => s.WorkDayMinutes = 480)
             .Build();
@@ -373,7 +373,7 @@ public class SessionServiceTests
     [Fact]
     public void CheckNewDay_NextDay_ReturnsTrue_ResetsSession()
     {
-        var (svc, time, storage) = new SessionServiceBuilder()
+        var (svc, time, _) = new SessionServiceBuilder()
             .WithTime(new DateTimeOffset(2026, 2, 10, 8, 0, 0, TimeSpan.FromHours(1)))
             .WithSettings(s => s.WorkDayMinutes = 480)
             .Build();
@@ -393,7 +393,7 @@ public class SessionServiceTests
     [Fact]
     public void EstimatedEndTime_BeforeLunch_IncludesLunchDuration()
     {
-        var (svc, time, _) = new SessionServiceBuilder()
+        var (svc, _, _) = new SessionServiceBuilder()
             .WithSettings(s =>
             {
                 s.WorkDayMinutes = 480;
@@ -405,13 +405,13 @@ public class SessionServiceTests
 
         // At 08:00, expected end = 08:00 + 8h work + 1h lunch = 17:00
         var end = svc.GetEstimatedEndTime();
-        Assert.Equal(new DateTime(2026, 2, 10, 17, 0, 0), end);
+        Assert.Equal(new DateTime(2026, 2, 10, 17, 0, 0, DateTimeKind.Local), end);
     }
 
     [Fact]
     public void EstimatedEndTime_AfterLunch_ExcludesLunch()
     {
-        var (svc, time, _) = new SessionServiceBuilder()
+        var (svc, _, _) = new SessionServiceBuilder()
             .WithSettings(s =>
             {
                 s.WorkDayMinutes = 480;
@@ -423,7 +423,7 @@ public class SessionServiceTests
 
         // Started at 14:00, past lunch → end = 14:00 + 8h = 22:00
         var end = svc.GetEstimatedEndTime();
-        Assert.Equal(new DateTime(2026, 2, 10, 22, 0, 0), end);
+        Assert.Equal(new DateTime(2026, 2, 10, 22, 0, 0, DateTimeKind.Local), end);
     }
 
     // ── SaveState ────────────────────────────────────────────
@@ -451,14 +451,14 @@ public class SessionServiceTests
             CurrentSession = new DaySession
             {
                 Date = "2026-02-10",
-                FirstLoginTime = new DateTime(2026, 2, 10, 7, 30, 0).ToString("o"),
+                FirstLoginTime = new DateTime(2026, 2, 10, 7, 30, 0, DateTimeKind.Local).ToString("o"),
                 TotalPausedMinutes = 15,
                 TotalLunchMinutes = 0,
                 IsPaused = false
             }
         };
 
-        var (svc, time, _) = new SessionServiceBuilder()
+        var (svc, _, _) = new SessionServiceBuilder()
             .WithTime(new DateTimeOffset(2026, 2, 10, 10, 0, 0, TimeSpan.FromHours(1)))
             .WithStore(store)
             .Build();
@@ -476,14 +476,14 @@ public class SessionServiceTests
             CurrentSession = new DaySession
             {
                 Date = "2026-02-10",
-                FirstLoginTime = new DateTime(2026, 2, 10, 8, 0, 0).ToString("o"),
+                FirstLoginTime = new DateTime(2026, 2, 10, 8, 0, 0, DateTimeKind.Local).ToString("o"),
                 TotalPausedMinutes = 10,
                 IsPaused = true,
-                PauseStartTime = new DateTime(2026, 2, 10, 9, 50, 0).ToString("o"),
+                PauseStartTime = new DateTime(2026, 2, 10, 9, 50, 0, DateTimeKind.Local).ToString("o"),
             }
         };
 
-        var (svc, time, _) = new SessionServiceBuilder()
+        var (svc, _, _) = new SessionServiceBuilder()
             .WithTime(new DateTimeOffset(2026, 2, 10, 10, 0, 0, TimeSpan.FromHours(1)))
             .WithStore(store)
             .Build();

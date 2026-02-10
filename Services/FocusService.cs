@@ -35,7 +35,10 @@ public static class FocusService
             // Enable Focus Assist / Quiet Hours — "Alarms only" mode
             SetQuietHoursState(2);
         }
-        catch { }
+        catch
+        {
+            // Registry/notification APIs may be unavailable on some Windows editions
+        }
     }
 
     /// <summary>
@@ -50,7 +53,10 @@ public static class FocusService
 
             SetQuietHoursState(_previousQuietHoursState);
         }
-        catch { }
+        catch
+        {
+            // Registry/notification APIs may be unavailable on some Windows editions
+        }
     }
 
     /// <summary>
@@ -67,7 +73,10 @@ public static class FocusService
                 UseShellExecute = true
             });
         }
-        catch { }
+        catch
+        {
+            // Teams may not be installed or the protocol handler may not be registered
+        }
     }
 
     // ── Toast notifications (registry) ───────────────────────
@@ -81,7 +90,7 @@ public static class FocusService
             var val = key?.GetValue("ToastEnabled");
             return val == null || (int)val != 0;
         }
-        catch { return true; }
+        catch { return true; } // Registry access may be restricted
     }
 
     private static void SetToastEnabled(bool enabled)
@@ -96,7 +105,10 @@ public static class FocusService
             NativeMethods.SendNotifyMessage(
                 NativeMethods.HWND_BROADCAST, NativeMethods.WM_SETTINGCHANGE, 0, 0);
         }
-        catch { }
+        catch
+        {
+            // Registry access may be restricted in corporate environments
+        }
     }
 
     // ── Focus Assist / Quiet Hours ───────────────────────────
@@ -110,7 +122,7 @@ public static class FocusService
             var val = key?.GetValue("NOC_GLOBAL_SETTING_TOASTS_ENABLED");
             return val is int i ? i : 1; // 1 = enabled (default)
         }
-        catch { return 1; }
+        catch { return 1; } // Registry access may be restricted
     }
 
     private static void SetQuietHoursState(int state)
@@ -124,7 +136,10 @@ public static class FocusService
             NativeMethods.SendNotifyMessage(
                 NativeMethods.HWND_BROADCAST, NativeMethods.WM_SETTINGCHANGE, 0, 0);
         }
-        catch { }
+        catch
+        {
+            // Registry access may be restricted in corporate environments
+        }
     }
 
     // ── Native interop ───────────────────────────────────────

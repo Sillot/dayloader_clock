@@ -37,7 +37,7 @@ public partial class HistoryWindow : Window
         InitializeComponent();
 
         _session = session;
-        _store = StorageService.LoadSessions();
+        _store = StorageService.Instance.LoadSessions();
         _sessionsByDate = new Dictionary<string, DaySession>();
 
         foreach (var s in _store.History)
@@ -55,7 +55,7 @@ public partial class HistoryWindow : Window
             _sessionsByDate[today.Date] = today;
         }
 
-        _displayedMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        _displayedMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1, 0, 0, 0, DateTimeKind.Local);
         BuildCalendar();
     }
 
@@ -67,14 +67,10 @@ public partial class HistoryWindow : Window
 
         txtMonth.Text = $"{CultureInfo.CurrentUICulture.DateTimeFormat.GetMonthName(_displayedMonth.Month)} {_displayedMonth.Year}";
 
-        // Day of week the month starts on (Monday=0 ... Sunday=6)
-        var firstDay = _displayedMonth;
-        int startOffset = ((int)firstDay.DayOfWeek + 6) % 7; // shift so Monday=0
+        int startOffset = ((int)_displayedMonth.DayOfWeek + 6) % 7; // Monday=0
         int daysInMonth = DateTime.DaysInMonth(_displayedMonth.Year, _displayedMonth.Month);
-
         var today = DateTime.Today;
 
-        // Monthly stats
         int activeDays = 0;
         double totalMinutes = 0;
 
@@ -83,107 +79,122 @@ public partial class HistoryWindow : Window
             int dayNum = slot - startOffset + 1;
             bool isCurrentMonth = dayNum >= 1 && dayNum <= daysInMonth;
 
-            var cell = new Border
-            {
-                CornerRadius = new CornerRadius(5),
-                Margin = new Thickness(2)
-            };
-
-            var stack = new StackPanel
-            {
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = System.Windows.HorizontalAlignment.Center
-            };
-
             if (isCurrentMonth)
             {
-                var date = new DateTime(_displayedMonth.Year, _displayedMonth.Month, dayNum);
-                var dateStr = date.ToString("yyyy-MM-dd");
-                bool isToday = date == today;
-                bool isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
-                bool hasSession = _sessionsByDate.TryGetValue(dateStr, out var session);
-
-                // Day number
-                var dayText = new TextBlock
-                {
-                    Text = dayNum.ToString(),
-                    FontFamily = new FontFamily("Consolas"),
-                    FontSize = 13,
-                    FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal,
-                    HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                    Foreground = isToday ? BrushToday
-                               : isWeekend ? BrushWeekend
-                               : BrushDayText
-                };
-
-                stack.Children.Add(dayText);
-
-                if (hasSession && session != null)
-                {
-                    double hours = session.EffectiveHours;
-                    activeDays++;
-                    totalMinutes += session.TotalEffectiveWorkMinutes;
-
-                    // Hours label
-                    var hoursText = new TextBlock
-                    {
-                        Text = FormatHelper.FormatDuration(session.TotalEffectiveWorkMinutes),
-                        FontFamily = new FontFamily("Consolas"),
-                        FontSize = 9,
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                        Foreground = BrushHoursText
-                    };
-                    stack.Children.Add(hoursText);
-
-                    // Color based on hours worked
-                    cell.Background = new SolidColorBrush(GetDayCellColor(hours));
-
-                    // Glow on full days
-                    if (hours >= 8)
-                    {
-                        cell.Effect = new DropShadowEffect
-                        {
-                            Color = Color.FromRgb(67, 233, 123),
-                            BlurRadius = 8,
-                            ShadowDepth = 0,
-                            Opacity = 0.4
-                        };
-                    }
-
-                    // Tooltip
-                    cell.ToolTip = string.Format(Strings.History_Tooltip,
-                        date.ToString("dd/MM/yyyy"),
-                        session.GetLoginFormatted(),
-                        session.GetLastActivityFormatted(),
-                        FormatHelper.FormatDuration(session.TotalEffectiveWorkMinutes),
-                        FormatHelper.FormatDuration(session.TotalLunchMinutes));
-                }
-                else
-                {
-                    cell.Background = isWeekend
-                        ? new SolidColorBrush(Color.FromRgb(45, 36, 22))
-                        : BrushEmpty;
-                }
-
-                // Today border
-                if (isToday)
-                {
-                    cell.BorderBrush = BrushToday;
-                    cell.BorderThickness = new Thickness(2);
-                }
+                var (cell, minutes) = BuildDayCell(dayNum, today);
+                if (minutes > 0) { activeDays++; totalMinutes += minutes; }
+                calendarGrid.Children.Add(cell);
             }
             else
             {
-                // Outside current month
-                cell.Background = new SolidColorBrush(Color.FromRgb(35, 28, 17));
-                cell.Opacity = 0.4;
+                calendarGrid.Children.Add(BuildOutOfMonthCell());
             }
-
-            cell.Child = stack;
-            calendarGrid.Children.Add(cell);
         }
 
-        // Update summary
+        UpdateMonthlySummary(activeDays, totalMinutes);
+    }
+
+    private (Border Cell, double Minutes) BuildDayCell(int dayNum, DateTime today)
+    {
+        var date = new DateTime(_displayedMonth.Year, _displayedMonth.Month, dayNum, 0, 0, 0, DateTimeKind.Local);
+        var dateStr = date.ToString("yyyy-MM-dd");
+        bool isToday = date == today;
+        bool isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+        bool hasSession = _sessionsByDate.TryGetValue(dateStr, out var session);
+
+        var cell = new Border { CornerRadius = new CornerRadius(5), Margin = new Thickness(2) };
+        var stack = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+        };
+
+        stack.Children.Add(new TextBlock
+        {
+            Text = dayNum.ToString(),
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 13,
+            FontWeight = isToday ? FontWeights.Bold : FontWeights.Normal,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+            Foreground = GetDayTextBrush(isToday, isWeekend)
+        });
+
+        double minutes = 0;
+
+        if (hasSession && session != null)
+        {
+            minutes = session.TotalEffectiveWorkMinutes;
+            ApplySessionVisuals(cell, stack, session, date);
+        }
+        else
+        {
+            cell.Background = isWeekend
+                ? new SolidColorBrush(Color.FromRgb(45, 36, 22))
+                : BrushEmpty;
+        }
+
+        if (isToday)
+        {
+            cell.BorderBrush = BrushToday;
+            cell.BorderThickness = new Thickness(2);
+        }
+
+        cell.Child = stack;
+        return (cell, minutes);
+    }
+
+    private static void ApplySessionVisuals(Border cell, StackPanel stack, DaySession session, DateTime date)
+    {
+        double hours = session.EffectiveHours;
+
+        stack.Children.Add(new TextBlock
+        {
+            Text = FormatHelper.FormatDuration(session.TotalEffectiveWorkMinutes),
+            FontFamily = new FontFamily("Consolas"),
+            FontSize = 9,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+            Foreground = BrushHoursText
+        });
+
+        cell.Background = new SolidColorBrush(GetDayCellColor(hours));
+
+        if (hours >= 8)
+        {
+            cell.Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(67, 233, 123),
+                BlurRadius = 8,
+                ShadowDepth = 0,
+                Opacity = 0.4
+            };
+        }
+
+        cell.ToolTip = string.Format(Strings.History_Tooltip,
+            date.ToString("dd/MM/yyyy"),
+            session.GetLoginFormatted(),
+            session.GetLastActivityFormatted(),
+            FormatHelper.FormatDuration(session.TotalEffectiveWorkMinutes),
+            FormatHelper.FormatDuration(session.TotalLunchMinutes));
+    }
+
+    private static Border BuildOutOfMonthCell()
+    {
+        return new Border
+        {
+            CornerRadius = new CornerRadius(5),
+            Margin = new Thickness(2),
+            Background = new SolidColorBrush(Color.FromRgb(35, 28, 17)),
+            Opacity = 0.4,
+            Child = new StackPanel
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = System.Windows.HorizontalAlignment.Center
+            }
+        };
+    }
+
+    private void UpdateMonthlySummary(int activeDays, double totalMinutes)
+    {
         txtDaysCount.Text = activeDays.ToString();
         txtTotalHours.Text = FormatHelper.FormatDuration(totalMinutes);
         txtAvgHours.Text = activeDays > 0 ? FormatHelper.FormatDuration(totalMinutes / activeDays) : "—";
@@ -210,6 +221,13 @@ public partial class HistoryWindow : Window
     }
 
     private static Color Lerp(Color a, Color b, double t) => ColorHelper.Lerp(a, b, t);
+
+    private static SolidColorBrush GetDayTextBrush(bool isToday, bool isWeekend)
+    {
+        if (isToday) return BrushToday;
+        if (isWeekend) return BrushWeekend;
+        return BrushDayText;
+    }
 
     // ── Event handlers ────────────────────────────────────────
 

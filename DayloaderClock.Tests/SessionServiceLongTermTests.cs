@@ -20,7 +20,7 @@ public class SessionServiceLongTermTests
         var store = new SessionStore();
         var startDate = new DateTimeOffset(2026, 1, 5, 8, 0, 0, TimeSpan.FromHours(1)); // Monday
 
-        var (svc, time, storage) = new SessionServiceBuilder()
+        var (svc, time, _) = new SessionServiceBuilder()
             .WithSettings(s => s.WorkDayMinutes = 480)
             .WithStore(store)
             .WithTime(startDate)
@@ -63,7 +63,7 @@ public class SessionServiceLongTermTests
         var store = new SessionStore();
         var startDate = new DateTimeOffset(2024, 1, 1, 8, 0, 0, TimeSpan.FromHours(1));
 
-        var (svc, time, storage) = new SessionServiceBuilder()
+        var (svc, time, _) = new SessionServiceBuilder()
             .WithSettings(s => s.WorkDayMinutes = 480)
             .WithStore(store)
             .WithTime(startDate)
@@ -91,7 +91,7 @@ public class SessionServiceLongTermTests
         var store = new SessionStore();
         var startDate = new DateTimeOffset(2026, 1, 5, 8, 0, 0, TimeSpan.FromHours(1));
 
-        var (svc, time, storage) = new SessionServiceBuilder()
+        var (svc, time, _) = new SessionServiceBuilder()
             .WithSettings(s => s.WorkDayMinutes = 480)
             .WithStore(store)
             .WithTime(startDate)
@@ -137,7 +137,7 @@ public class SessionServiceLongTermTests
         var store = new SessionStore();
         var startDate = new DateTimeOffset(2026, 1, 5, 8, 0, 0, TimeSpan.FromHours(1));
 
-        var (svc, time, storage) = new SessionServiceBuilder()
+        var (svc, time, _) = new SessionServiceBuilder()
             .WithSettings(s => s.WorkDayMinutes = 480)
             .WithStore(store)
             .WithTime(startDate)
@@ -193,7 +193,7 @@ public class SessionServiceLongTermTests
         // Friday 08:00
         var friday = new DateTimeOffset(2026, 2, 6, 8, 0, 0, TimeSpan.FromHours(1));
 
-        var (svc, time, storage) = new SessionServiceBuilder()
+        var (svc, time, _) = new SessionServiceBuilder()
             .WithSettings(s => s.WorkDayMinutes = 480)
             .WithStore(store)
             .WithTime(friday)

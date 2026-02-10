@@ -13,7 +13,10 @@ using Rectangle = System.Windows.Shapes.Rectangle;
 
 namespace DayloaderClock;
 
+// CA1001: disposable fields are cleaned up in ExitApp() — WPF Window should not implement IDisposable
+#pragma warning disable CA1001
 public partial class MainWindow : Window
+#pragma warning restore CA1001
 {
     private SessionService _session = null!;
     private AppSettings _settings = null!;
@@ -27,12 +30,10 @@ public partial class MainWindow : Window
 
     // ── Pomodoro ──────────────────────────────────────────────
     private bool _pomodoroActive;
+
     private DateTime _pomodoroEndTime;
     private DateTime _pomodoroStartTime;
     private DispatcherTimer? _pomodoroTimer;
-
-    // Number of pixel segments in the horizontal bar
-    private const int SEGMENT_COUNT = 80;
 
     // ── Blink (last segment heartbeat) ───────────────────────
     private Rectangle? _lastFilledSegment;
@@ -61,7 +62,7 @@ public partial class MainWindow : Window
         txtTitle.ToolTip = $"Dayloader Clock {AppVersion.Display}";
         txtVersion.Text = AppVersion.Display;
 
-        _settings = StorageService.LoadSettings();
+        _settings = StorageService.Instance.LoadSettings();
         _session = new SessionService(_settings);
         _session.OvertimeStarted += OnOvertimeStarted;
         _session.PauseStateChanged += OnPauseStateChanged;
@@ -158,10 +159,20 @@ public partial class MainWindow : Window
         // ── Text labels ──
         txtStartTime.Text = string.Format(Strings.StartTime, _session.LoginTime.ToString("HH:mm"));
         txtElapsed.Text = FormatTime(effectiveWork);
-
-        // Pause indicator
         txtPauseIndicator.Visibility = isPaused ? Visibility.Visible : Visibility.Collapsed;
+        txtLunch.Visibility = isLunch ? Visibility.Visible : Visibility.Collapsed;
 
+        UpdateOvertimeDisplay(isOvertime, remaining);
+
+        var displayPercent = Math.Min(progress, 100);
+        DrawBar(progress);
+        UpdateMiniModeText(isOvertime, isPaused, remaining, displayPercent);
+        UpdateTrayIcon(progress, effectiveWork, displayPercent);
+        UpdateTaskbarProgress(displayPercent, isOvertime, isPaused);
+    }
+
+    private void UpdateOvertimeDisplay(bool isOvertime, TimeSpan remaining)
+    {
         if (isOvertime)
         {
             var overtime = _session.GetOvertimeTime();
@@ -176,57 +187,82 @@ public partial class MainWindow : Window
             txtRemaining.Foreground = new SolidColorBrush(Color.FromRgb(107, 80, 53));
             txtOvertime.Visibility = Visibility.Collapsed;
         }
+    }
 
-        // Lunch indicator
-        txtLunch.Visibility = isLunch ? Visibility.Visible : Visibility.Collapsed;
+    private void UpdateMiniModeText(bool isOvertime, bool isPaused, TimeSpan remaining, double displayPercent)
+    {
+        if (!_isMiniMode) return;
 
-        // Progress
-        var displayPercent = Math.Min(progress, 100);
-
-        // Bar
-        DrawBar(progress);
-
-        // Mini mode overlay
-        if (_isMiniMode)
+        if (isOvertime)
         {
-            if (isOvertime)
-            {
-                var ot = _session.GetOvertimeTime();
-                txtMiniPercent.Text = string.Format(Strings.Mini_Done, FormatTime(ot));
-            }
-            else if (_isStopped)
-            {
-                txtMiniPercent.Text = string.Format(Strings.Mini_Stop, displayPercent.ToString("0"));
-            }
-            else if (isPaused)
-            {
-                txtMiniPercent.Text = string.Format(Strings.Mini_Paused, displayPercent.ToString("0"), FormatTime(remaining));
-            }
-            else
-            {
-                txtMiniPercent.Text = string.Format(Strings.Mini_Normal, displayPercent.ToString("0"), FormatTime(remaining));
-            }
+            var ot = _session.GetOvertimeTime();
+            txtMiniPercent.Text = string.Format(Strings.Mini_Done, FormatTime(ot));
         }
-
-        // Tray icon
-        UpdateTrayIcon(progress, effectiveWork, displayPercent);
-
-        // Taskbar progress bar
-        if (TaskbarItemInfo != null)
+        else if (_isStopped)
         {
-            TaskbarItemInfo.ProgressValue = displayPercent / 100.0;
-            if (_isStopped)
-                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.None;
-            else if (isOvertime)
-                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Error;
-            else if (isPaused)
-                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Paused;
-            else
-                TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Normal;
+            txtMiniPercent.Text = string.Format(Strings.Mini_Stop, displayPercent.ToString("0"));
+        }
+        else if (isPaused)
+        {
+            txtMiniPercent.Text = string.Format(Strings.Mini_Paused, displayPercent.ToString("0"), FormatTime(remaining));
+        }
+        else
+        {
+            txtMiniPercent.Text = string.Format(Strings.Mini_Normal, displayPercent.ToString("0"), FormatTime(remaining));
         }
     }
 
+    private void UpdateTaskbarProgress(double displayPercent, bool isOvertime, bool isPaused)
+    {
+        if (TaskbarItemInfo == null) return;
+
+        TaskbarItemInfo.ProgressValue = displayPercent / 100.0;
+
+        if (_isStopped)
+            TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.None;
+        else if (isOvertime)
+            TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Error;
+        else if (isPaused)
+            TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Paused;
+        else
+            TaskbarItemInfo.ProgressState = System.Windows.Shell.TaskbarItemProgressState.Normal;
+    }
+
     // ── Bar drawing ───────────────────────────────────────────
+
+    private static (int SegCount, double SegWidth) CalculateSegmentLayout(double canvasWidth, double targetSegWidth, double gap)
+    {
+        int segCount = Math.Max(10, (int)((canvasWidth + gap) / (targetSegWidth + gap)));
+        double segWidth = (canvasWidth - gap * (segCount - 1)) / segCount;
+        if (segWidth < 2) segWidth = 2;
+        return (segCount, segWidth);
+    }
+
+    private static Rectangle CreateBarSegment(int index, int filledSegments, int segCount,
+        double segWidth, double canvasHeight, bool isOvertime)
+    {
+        var rect = new Rectangle
+        {
+            Width = segWidth,
+            Height = canvasHeight,
+            RadiusX = 2,
+            RadiusY = 2
+        };
+
+        if (index < filledSegments)
+        {
+            var color = ColorHelper.GetBarGradient(index, segCount);
+            if (isOvertime)
+                color = ColorHelper.Lerp(color, ColorHelper.Overtime, 0.4);
+            rect.Fill = new SolidColorBrush(color);
+        }
+        else
+        {
+            rect.Fill = new SolidColorBrush(ColorHelper.Empty);
+        }
+
+        return rect;
+    }
 
     private void DrawBar(double progress)
     {
@@ -234,21 +270,15 @@ public partial class MainWindow : Window
         double canvasHeight = barCanvas.ActualHeight;
         if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
-        // Dynamically compute segment count to fit the available width
-        const double targetSegWidth = 12;
         const double gap = 2;
-        int segCount = Math.Max(10, (int)((canvasWidth + gap) / (targetSegWidth + gap)));
-        double segWidth = (canvasWidth - gap * (segCount - 1)) / segCount;
-        if (segWidth < 2) segWidth = 2;
+        var (segCount, segWidth) = CalculateSegmentLayout(canvasWidth, targetSegWidth: 12, gap);
 
         int filledSegments = (int)Math.Min(
             Math.Floor(progress / 100.0 * segCount), segCount);
-        // Always show at least 1 filled segment when the day has started
         if (filledSegments == 0 && progress > 0 && !_isStopped)
             filledSegments = 1;
         bool isOvertime = progress > 100;
 
-        // Skip full redraw if segment count hasn't changed
         if (filledSegments == _prevBarFilled && !isOvertime && barCanvas.Children.Count > 0)
             return;
         _prevBarFilled = filledSegments;
@@ -258,32 +288,10 @@ public partial class MainWindow : Window
 
         for (int i = 0; i < segCount; i++)
         {
-            var rect = new Rectangle
-            {
-                Width = segWidth,
-                Height = canvasHeight,
-                RadiusX = 2,
-                RadiusY = 2
-            };
+            var rect = CreateBarSegment(i, filledSegments, segCount, segWidth, canvasHeight, isOvertime);
 
-            if (i < filledSegments)
-            {
-                var color = ColorHelper.GetBarGradient(i, segCount);
-                if (isOvertime)
-                {
-                    // Pulsing red tint in overtime
-                    color = ColorHelper.Lerp(color, ColorHelper.Overtime, 0.4);
-                }
-                rect.Fill = new SolidColorBrush(color);
-
-                // Track the last filled segment for blink
-                if (i == filledSegments - 1)
-                    _lastFilledSegment = rect;
-            }
-            else
-            {
-                rect.Fill = new SolidColorBrush(ColorHelper.Empty);
-            }
+            if (i < filledSegments && i == filledSegments - 1)
+                _lastFilledSegment = rect;
 
             Canvas.SetLeft(rect, i * (segWidth + gap));
             Canvas.SetTop(rect, 0);
@@ -383,7 +391,7 @@ public partial class MainWindow : Window
         if (win.ShowDialog() == true)
         {
             _settings = win.Settings;
-            StorageService.SaveSettings(_settings);
+            StorageService.Instance.SaveSettings(_settings);
 
             if (win.LanguageChanged)
             {
@@ -736,16 +744,42 @@ public partial class MainWindow : Window
         DrawPomodoroBar(progress);
     }
 
+    private static readonly Color PomodoroColorStart = Color.FromRgb(0xE8, 0x70, 0x30);
+    private static readonly Color PomodoroColorEnd = Color.FromRgb(0xCC, 0x30, 0x30);
+    private static readonly Color PomodoroColorEmpty = Color.FromRgb(0x30, 0x28, 0x1A);
+
+    private static Rectangle CreatePomodoroSegment(int index, int filledSegments, int segCount,
+        double segWidth, double canvasHeight)
+    {
+        var rect = new Rectangle
+        {
+            Width = segWidth,
+            Height = canvasHeight,
+            RadiusX = 1.5,
+            RadiusY = 1.5
+        };
+
+        if (index < filledSegments)
+        {
+            double t = segCount > 1 ? (double)index / (segCount - 1) : 0;
+            rect.Fill = new SolidColorBrush(ColorHelper.Lerp(PomodoroColorStart, PomodoroColorEnd, t));
+        }
+        else
+        {
+            rect.Fill = new SolidColorBrush(PomodoroColorEmpty);
+        }
+
+        return rect;
+    }
+
     private void DrawPomodoroBar(double progress)
     {
         double canvasWidth = pomodoroCanvas.ActualWidth;
         double canvasHeight = pomodoroCanvas.ActualHeight;
         if (canvasWidth <= 0 || canvasHeight <= 0) return;
 
-        const double targetSegWidth = 9;
         const double gap = 1.5;
-        int segCount = Math.Max(8, (int)((canvasWidth + gap) / (targetSegWidth + gap)));
-        double segWidth = (canvasWidth - gap * (segCount - 1)) / segCount;
+        var (segCount, segWidth) = CalculateSegmentLayout(canvasWidth, targetSegWidth: 9, gap);
         if (segWidth < 1.5) segWidth = 1.5;
 
         int filledSegments = (int)Math.Min(
@@ -753,7 +787,6 @@ public partial class MainWindow : Window
         if (filledSegments == 0 && progress > 0)
             filledSegments = 1;
 
-        // Skip full redraw if segment count hasn't changed
         if (filledSegments == _prevPomodoroFilled && pomodoroCanvas.Children.Count > 0)
             return;
         _prevPomodoroFilled = filledSegments;
@@ -761,34 +794,12 @@ public partial class MainWindow : Window
         pomodoroCanvas.Children.Clear();
         _lastPomodoroSegment = null;
 
-        // Red gradient: from warm orange-red to deep red
-        var colorStart = Color.FromRgb(0xE8, 0x70, 0x30);
-        var colorEnd = Color.FromRgb(0xCC, 0x30, 0x30);
-        var colorEmpty = Color.FromRgb(0x30, 0x28, 0x1A);
-
         for (int i = 0; i < segCount; i++)
         {
-            var rect = new Rectangle
-            {
-                Width = segWidth,
-                Height = canvasHeight,
-                RadiusX = 1.5,
-                RadiusY = 1.5
-            };
+            var rect = CreatePomodoroSegment(i, filledSegments, segCount, segWidth, canvasHeight);
 
-            if (i < filledSegments)
-            {
-                double t = segCount > 1 ? (double)i / (segCount - 1) : 0;
-                var c = ColorHelper.Lerp(colorStart, colorEnd, t);
-                rect.Fill = new SolidColorBrush(c);
-
-                if (i == filledSegments - 1)
-                    _lastPomodoroSegment = rect;
-            }
-            else
-            {
-                rect.Fill = new SolidColorBrush(colorEmpty);
-            }
+            if (i < filledSegments && i == filledSegments - 1)
+                _lastPomodoroSegment = rect;
 
             Canvas.SetLeft(rect, i * (segWidth + gap));
             Canvas.SetTop(rect, 0);
