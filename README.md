@@ -9,6 +9,8 @@ A visual progress bar of your workday that fills up segment by segment with a co
 >
 > Requires Windows 10/11 — .NET 8
 
+![Dayloader Clock](screenshot.png)
+
 ## Features
 
 - **Progress bar** with green → yellow → orange → red gradient and blinking last segment
