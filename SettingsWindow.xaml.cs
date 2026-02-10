@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
+using DayloaderClock.Helpers;
 using DayloaderClock.Models;
 using DayloaderClock.Resources;
 using Microsoft.Win32;
@@ -27,8 +28,7 @@ public partial class SettingsWindow : Window
         Settings = currentSettings;
 
         // Version
-        var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        txtVersion.Text = ver != null ? $"v{ver.Major}.{ver.Minor}.{ver.Build}" : "v?";
+        txtVersion.Text = AppVersion.Display;
 
         // Populate fields from current settings
         txtWorkHours.Text = (currentSettings.WorkDayMinutes / 60.0).ToString("F1", CultureInfo.InvariantCulture);

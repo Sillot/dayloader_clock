@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using ClosedXML.Excel;
+using DayloaderClock.Helpers;
 using DayloaderClock.Models;
 using DayloaderClock.Services;
 using DayloaderClock.Resources;
@@ -23,43 +24,33 @@ public partial class HistoryWindow : Window
     private readonly Dictionary<string, DaySession> _sessionsByDate;
 
     // ── Colors ────────────────────────────────────────────────
-    private static readonly SolidColorBrush BrushEmpty = new(Color.FromRgb(58, 46, 30));       // #3A2E1E
-    private static readonly SolidColorBrush BrushToday = new(Color.FromRgb(79, 172, 254));      // blue accent
-    private static readonly SolidColorBrush BrushDayText = new(Color.FromRgb(74, 53, 32));      // #4A3520
-    private static readonly SolidColorBrush BrushWeekend = new(Color.FromRgb(139, 115, 85));    // #8B7355
-    private static readonly SolidColorBrush BrushOutside = new(Color.FromRgb(107, 80, 53));     // #6B5035
-    private static readonly SolidColorBrush BrushHoursText = new(Color.FromRgb(232, 213, 184)); // #E8D5B8
+    private static readonly SolidColorBrush BrushEmpty = new(Color.FromRgb(58, 46, 30));
+    private static readonly SolidColorBrush BrushToday = new(Color.FromRgb(79, 172, 254));
+    private static readonly SolidColorBrush BrushDayText = new(Color.FromRgb(74, 53, 32));
+    private static readonly SolidColorBrush BrushWeekend = new(Color.FromRgb(139, 115, 85));
+    private static readonly SolidColorBrush BrushHoursText = new(Color.FromRgb(232, 213, 184));
 
+    private readonly SessionService _session;
 
-    /// <summary>Format minutes as "Xh YYmin" (e.g. 1h 30min, 45min, 8h 00min)</summary>
-    private static string FormatDuration(double totalMinutes)
-    {
-        int mins = (int)Math.Round(totalMinutes);
-        int h = mins / 60;
-        int m = mins % 60;
-        return h > 0 ? $"{h}h {m:D2}min" : $"{m}min";
-    }
-
-    public HistoryWindow()
+    public HistoryWindow(SessionService session)
     {
         InitializeComponent();
 
+        _session = session;
         _store = StorageService.LoadSessions();
         _sessionsByDate = new Dictionary<string, DaySession>();
 
-        foreach (var session in _store.History)
-            _sessionsByDate[session.Date] = session;
+        foreach (var s in _store.History)
+            _sessionsByDate[s.Date] = s;
 
-        // For today's session, compute live effective work time
+        // For today's session, use live values from the shared SessionService
         if (_store.CurrentSession != null)
         {
             var today = _store.CurrentSession;
             if (today.Date == DateTime.Today.ToString("yyyy-MM-dd"))
             {
-                var settings = StorageService.LoadSettings();
-                var session = new SessionService(settings);
-                today.TotalEffectiveWorkMinutes = session.GetEffectiveWorkTime().TotalMinutes;
-                today.TotalLunchMinutes = session.GetLunchDeduction().TotalMinutes;
+                today.TotalEffectiveWorkMinutes = _session.GetEffectiveWorkTime().TotalMinutes;
+                today.TotalLunchMinutes = _session.GetLunchDeduction().TotalMinutes;
             }
             _sessionsByDate[today.Date] = today;
         }
@@ -129,14 +120,14 @@ public partial class HistoryWindow : Window
 
                 if (hasSession && session != null)
                 {
-                    double hours = session.TotalEffectiveWorkMinutes / 60.0;
+                    double hours = session.EffectiveHours;
                     activeDays++;
                     totalMinutes += session.TotalEffectiveWorkMinutes;
 
                     // Hours label
                     var hoursText = new TextBlock
                     {
-                        Text = FormatDuration(session.TotalEffectiveWorkMinutes),
+                        Text = FormatHelper.FormatDuration(session.TotalEffectiveWorkMinutes),
                         FontFamily = new FontFamily("Consolas"),
                         FontSize = 9,
                         HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
@@ -160,15 +151,12 @@ public partial class HistoryWindow : Window
                     }
 
                     // Tooltip
-                    var login = DateTime.TryParse(session.FirstLoginTime, out var loginDt)
-                        ? loginDt.ToString("HH:mm") : "?";
-                    var lastActivity = DateTime.TryParse(session.LastActivityTime, out var lastDt)
-                        ? lastDt.ToString("HH:mm") : "?";
-
                     cell.ToolTip = string.Format(Strings.History_Tooltip,
-                        date.ToString("dd/MM/yyyy"), login, lastActivity,
-                        FormatDuration(session.TotalEffectiveWorkMinutes),
-                        FormatDuration(session.TotalLunchMinutes));
+                        date.ToString("dd/MM/yyyy"),
+                        session.GetLoginFormatted(),
+                        session.GetLastActivityFormatted(),
+                        FormatHelper.FormatDuration(session.TotalEffectiveWorkMinutes),
+                        FormatHelper.FormatDuration(session.TotalLunchMinutes));
                 }
                 else
                 {
@@ -197,8 +185,8 @@ public partial class HistoryWindow : Window
 
         // Update summary
         txtDaysCount.Text = activeDays.ToString();
-        txtTotalHours.Text = FormatDuration(totalMinutes);
-        txtAvgHours.Text = activeDays > 0 ? FormatDuration(totalMinutes / activeDays) : "\u2014";
+        txtTotalHours.Text = FormatHelper.FormatDuration(totalMinutes);
+        txtAvgHours.Text = activeDays > 0 ? FormatHelper.FormatDuration(totalMinutes / activeDays) : "—";
     }
 
     /// <summary>
@@ -221,14 +209,7 @@ public partial class HistoryWindow : Window
         }
     }
 
-    private static Color Lerp(Color a, Color b, double t)
-    {
-        t = Math.Clamp(t, 0, 1);
-        return Color.FromRgb(
-            (byte)(a.R + (b.R - a.R) * t),
-            (byte)(a.G + (b.G - a.G) * t),
-            (byte)(a.B + (b.B - a.B) * t));
-    }
+    private static Color Lerp(Color a, Color b, double t) => ColorHelper.Lerp(a, b, t);
 
     // ── Event handlers ────────────────────────────────────────
 
@@ -283,9 +264,9 @@ public partial class HistoryWindow : Window
 
             foreach (var s in sessions)
             {
-                var login = DateTime.TryParse(s.FirstLoginTime, out var lt) ? lt.ToString("HH:mm") : "";
-                var last = DateTime.TryParse(s.LastActivityTime, out var at) ? at.ToString("HH:mm") : "";
-                double hours = s.TotalEffectiveWorkMinutes / 60.0;
+                var login = s.GetLoginFormatted("");
+                var last = s.GetLastActivityFormatted("");
+                double hours = s.EffectiveHours;
                 sb.AppendLine($"{s.Date};{login};{last};{s.TotalEffectiveWorkMinutes:F0};{hours:F2};{s.TotalLunchMinutes:F0};{(s.DayCompleted ? Strings.History_Yes : Strings.History_No)}");
             }
 
@@ -334,9 +315,9 @@ public partial class HistoryWindow : Window
             {
                 var s = sessions[i];
                 int row = i + 2;
-                var login = DateTime.TryParse(s.FirstLoginTime, out var lt) ? lt.ToString("HH:mm") : "";
-                var last = DateTime.TryParse(s.LastActivityTime, out var at) ? at.ToString("HH:mm") : "";
-                double hours = s.TotalEffectiveWorkMinutes / 60.0;
+                var login = s.GetLoginFormatted("");
+                var last = s.GetLastActivityFormatted("");
+                double hours = s.EffectiveHours;
 
                 ws.Cell(row, 1).Value = s.Date;
                 ws.Cell(row, 2).Value = login;

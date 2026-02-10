@@ -31,6 +31,19 @@ public class DaySession
 
     /// <summary>Total lunch minutes actually taken (screen locked during lunch window)</summary>
     public double TotalLunchMinutes { get; set; }
+
+    // ── Computed helpers ─────────────────────────────────────
+
+    /// <summary>Effective work expressed in hours.</summary>
+    public double EffectiveHours => TotalEffectiveWorkMinutes / 60.0;
+
+    /// <summary>Login time formatted as HH:mm, or fallback if unparseable.</summary>
+    public string GetLoginFormatted(string fallback = "?")
+        => DateTime.TryParse(FirstLoginTime, out var dt) ? dt.ToString("HH:mm") : fallback;
+
+    /// <summary>Last activity time formatted as HH:mm, or fallback.</summary>
+    public string GetLastActivityFormatted(string fallback = "?")
+        => DateTime.TryParse(LastActivityTime, out var dt) ? dt.ToString("HH:mm") : fallback;
 }
 
 /// <summary>

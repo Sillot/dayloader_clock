@@ -5,6 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using DayloaderClock.Helpers;
 using DayloaderClock.Models;
 using DayloaderClock.Services;
 using DayloaderClock.Resources;
@@ -47,13 +48,7 @@ public partial class MainWindow : Window
     private double _savedWidth;
     private double _savedHeight;
 
-    // ── Gradient stops (Green → Yellow → Orange → Red) ───────
-    private static readonly Color ColorGreen  = Color.FromRgb(76, 217, 100);
-    private static readonly Color ColorYellow = Color.FromRgb(255, 230, 50);
-    private static readonly Color ColorOrange = Color.FromRgb(255, 149, 0);
-    private static readonly Color ColorRed    = Color.FromRgb(235, 64, 52);
-    private static readonly Color ColorEmpty  = Color.FromRgb(30, 26, 18);
-    private static readonly Color ColorOvertime = Color.FromRgb(204, 51, 51);
+    // Colors are centralized in ColorHelper
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern bool DestroyIcon(IntPtr handle);
@@ -63,10 +58,8 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         // Version
-        var ver = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-        var versionText = ver != null ? $"v{ver.Major}.{ver.Minor}.{ver.Build}" : "v?";
-        txtTitle.ToolTip = $"Dayloader Clock {versionText}";
-        txtVersion.Text = versionText;
+        txtTitle.ToolTip = $"Dayloader Clock {AppVersion.Display}";
+        txtVersion.Text = AppVersion.Display;
 
         _settings = StorageService.LoadSettings();
         _session = new SessionService(_settings);
@@ -173,7 +166,7 @@ public partial class MainWindow : Window
         {
             var overtime = _session.GetOvertimeTime();
             txtRemaining.Text = Strings.Finished;
-            txtRemaining.Foreground = new SolidColorBrush(ColorOvertime);
+            txtRemaining.Foreground = new SolidColorBrush(ColorHelper.Overtime);
             txtOvertime.Text = string.Format(Strings.Overtime, FormatTime(overtime));
             txtOvertime.Visibility = Visibility.Visible;
         }
@@ -275,11 +268,11 @@ public partial class MainWindow : Window
 
             if (i < filledSegments)
             {
-                var color = GetBarGradientColor(i, segCount);
+                var color = ColorHelper.GetBarGradient(i, segCount);
                 if (isOvertime)
                 {
                     // Pulsing red tint in overtime
-                    color = InterpolateColor(color, ColorOvertime, 0.4);
+                    color = ColorHelper.Lerp(color, ColorHelper.Overtime, 0.4);
                 }
                 rect.Fill = new SolidColorBrush(color);
 
@@ -289,7 +282,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                rect.Fill = new SolidColorBrush(ColorEmpty);
+                rect.Fill = new SolidColorBrush(ColorHelper.Empty);
             }
 
             Canvas.SetLeft(rect, i * (segWidth + gap));
@@ -326,44 +319,8 @@ public partial class MainWindow : Window
         }
     }
 
-    // ── Color helpers ─────────────────────────────────────────
-
-    /// <summary>
-    /// Bar gradient: Green → Yellow → Orange → Red (matching physical device).
-    /// </summary>
-    private static Color GetBarGradientColor(int index, int total)
-    {
-        double t = (double)index / Math.Max(total - 1, 1);
-
-        if (t < 0.33)
-        {
-            return InterpolateColor(ColorGreen, ColorYellow, t / 0.33);
-        }
-        else if (t < 0.66)
-        {
-            return InterpolateColor(ColorYellow, ColorOrange, (t - 0.33) / 0.33);
-        }
-        else
-        {
-            return InterpolateColor(ColorOrange, ColorRed, (t - 0.66) / 0.34);
-        }
-    }
-
-    private static Color InterpolateColor(Color from, Color to, double t)
-    {
-        t = Math.Clamp(t, 0, 1);
-        return Color.FromRgb(
-            (byte)(from.R + (to.R - from.R) * t),
-            (byte)(from.G + (to.G - from.G) * t),
-            (byte)(from.B + (to.B - from.B) * t));
-    }
-
-    private static string FormatTime(TimeSpan ts)
-    {
-        if (ts.TotalHours >= 1)
-            return $"{(int)ts.TotalHours}h {ts.Minutes:D2}m";
-        return $"{ts.Minutes}m";
-    }
+    // Color helpers and FormatTime are in Helpers/ColorHelper.cs and Helpers/FormatHelper.cs
+    private static string FormatTime(TimeSpan ts) => FormatHelper.FormatTime(ts);
 
     // ── Tray icon drawing ─────────────────────────────────────
 
@@ -391,29 +348,9 @@ public partial class MainWindow : Window
             for (int x = 0; x < filled; x++)
             {
                 double t = (double)x / 14.0;
-                System.Drawing.Color c;
-                if (isOvertime)
-                {
-                    c = System.Drawing.Color.FromArgb(204, 51, 51);
-                }
-                else if (t < 0.33)
-                {
-                    c = LerpDrawingColor(
-                        System.Drawing.Color.FromArgb(76, 217, 100),
-                        System.Drawing.Color.FromArgb(255, 230, 50), t / 0.33);
-                }
-                else if (t < 0.66)
-                {
-                    c = LerpDrawingColor(
-                        System.Drawing.Color.FromArgb(255, 230, 50),
-                        System.Drawing.Color.FromArgb(255, 149, 0), (t - 0.33) / 0.33);
-                }
-                else
-                {
-                    c = LerpDrawingColor(
-                        System.Drawing.Color.FromArgb(255, 149, 0),
-                        System.Drawing.Color.FromArgb(235, 64, 52), (t - 0.66) / 0.34);
-                }
+                System.Drawing.Color c = isOvertime
+                    ? System.Drawing.Color.FromArgb(204, 51, 51)
+                    : ColorHelper.GetBarGradientDrawing(t);
 
                 using var brush = new System.Drawing.SolidBrush(c);
                 g.FillRectangle(brush, 1 + x, yOffset, 1, barHeight);
@@ -429,16 +366,6 @@ public partial class MainWindow : Window
         {
             DestroyIcon(hIcon);
         }
-    }
-
-    private static System.Drawing.Color LerpDrawingColor(
-        System.Drawing.Color from, System.Drawing.Color to, double t)
-    {
-        t = Math.Clamp(t, 0, 1);
-        return System.Drawing.Color.FromArgb(
-            (int)(from.R + (to.R - from.R) * t),
-            (int)(from.G + (to.G - from.G) * t),
-            (int)(from.B + (to.B - from.B) * t));
     }
 
     // ── Window management ─────────────────────────────────────
@@ -483,7 +410,7 @@ public partial class MainWindow : Window
     private void OpenHistory()
     {
         ShowWindow();
-        var win = new HistoryWindow { Owner = this };
+        var win = new HistoryWindow(_session) { Owner = this };
         win.ShowDialog();
     }
 
@@ -852,7 +779,7 @@ public partial class MainWindow : Window
             if (i < filledSegments)
             {
                 double t = segCount > 1 ? (double)i / (segCount - 1) : 0;
-                var c = InterpolateColor(colorStart, colorEnd, t);
+                var c = ColorHelper.Lerp(colorStart, colorEnd, t);
                 rect.Fill = new SolidColorBrush(c);
 
                 if (i == filledSegments - 1)
