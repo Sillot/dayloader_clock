@@ -17,6 +17,15 @@ public class DaySession
     /// <summary>Total effective work minutes (excluding lunch)</summary>
     public double TotalEffectiveWorkMinutes { get; set; }
 
+    /// <summary>Total paused minutes accumulated today</summary>
+    public double TotalPausedMinutes { get; set; }
+
+    /// <summary>Whether the session is currently paused</summary>
+    public bool IsPaused { get; set; }
+
+    /// <summary>When the current pause started (ISO 8601), null if not paused</summary>
+    public string? PauseStartTime { get; set; }
+
     /// <summary>Whether the day was completed (8h reached or day ended)</summary>
     public bool DayCompleted { get; set; }
 }

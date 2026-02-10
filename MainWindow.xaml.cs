@@ -78,6 +78,14 @@ public partial class MainWindow : Window
         UpdateDisplay();
         RestoreWindowPosition();
 
+        // Restore pause UI if session was paused on disk
+        if (_session.IsPaused)
+        {
+            btnPause.Content = "\u25B6";
+            btnPause.ToolTip = "Reprendre";
+            _trayPauseItem.Text = "\u25B6 Reprendre";
+        }
+
         Closing += MainWindow_Closing;
         LocationChanged += MainWindow_LocationChanged;
         SizeChanged += MainWindow_SizeChanged;
@@ -106,7 +114,8 @@ public partial class MainWindow : Window
         _trayPomodoroItem = new System.Windows.Forms.ToolStripMenuItem("🍅 Pomodoro", null, (_, _) => Dispatcher.Invoke(TogglePomodoro));
         menu.Items.Add(_trayPomodoroItem);
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
-        menu.Items.Add("📅 Historique", null, (_, _) => Dispatcher.Invoke(OpenHistory));
+        menu.Items.Add("� Réinitialiser la journée", null, (_, _) => Dispatcher.Invoke(ResetDay));
+        menu.Items.Add("�📅 Historique", null, (_, _) => Dispatcher.Invoke(OpenHistory));
         menu.Items.Add("⚙ Paramètres", null, (_, _) => Dispatcher.Invoke(OpenSettings));
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add("Quitter", null, (_, _) => Dispatcher.Invoke(ExitApp));
@@ -588,6 +597,36 @@ public partial class MainWindow : Window
         ShowWindow();
     }
 
+    private void ResetDay()
+    {
+        var result = MessageBox.Show("Réinitialiser la journée ?\nLe compteur sera remis à zéro.",
+            "Dayloader Clock", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (result != MessageBoxResult.Yes) return;
+
+        _isStopped = false;
+        _session.ResetDay();
+
+        // Reset cached draw state
+        _prevBarFilled = -1;
+        _prevTrayFilled = -1;
+        _prevPomodoroFilled = -1;
+
+        // Reset UI
+        btnStop.Content = "\u23F9";
+        btnStop.ToolTip = "Fin de journée";
+        btnPause.IsEnabled = true;
+        btnPause.Content = "\u23F8";
+        btnPause.ToolTip = "Pause";
+        txtPauseIndicator.Visibility = Visibility.Collapsed;
+        txtStopIndicator.Visibility = Visibility.Collapsed;
+        _trayPauseItem.Text = "\u23F8 Pause";
+        _trayPauseItem.Visible = true;
+        _trayStopItem.Text = "\u23F9 Fin de journée";
+        txtStartTime.Text = $"Début: {_session.LoginTime:HH:mm}";
+
+        UpdateDisplay();
+    }
+
     private void Pomodoro_Click(object sender, RoutedEventArgs e) => TogglePomodoro();
 
     private void BarCanvas_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -609,15 +648,18 @@ public partial class MainWindow : Window
             rowInfo.Visibility = Visibility.Collapsed;
             rowMarkers.Visibility = Visibility.Collapsed;
             rowFooter.Visibility = Visibility.Collapsed;
-            mainGrid.Margin = new Thickness(3, 3, 3, 3);
-            outerBorder.Margin = new Thickness(2);
+            mainGrid.Margin = new Thickness(2, 2, 2, 2);
+            outerBorder.Margin = new Thickness(1);
             outerBorder.CornerRadius = new CornerRadius(8);
+            outerBorder.Effect = null; // Remove shadow in mini mode
             innerBorder.Margin = new Thickness(2);
             innerBorder.CornerRadius = new CornerRadius(6);
             txtMiniPercent.Visibility = Visibility.Visible;
 
-            MinHeight = 34;
-            Height = 34;
+            MinHeight = 0;
+            MinWidth = 200;
+            Height = double.NaN; // Auto height — let content decide
+            SizeToContent = SizeToContent.Height;
             ResizeMode = ResizeMode.NoResize;
         }
         else
@@ -629,11 +671,17 @@ public partial class MainWindow : Window
             mainGrid.Margin = new Thickness(20, 10, 20, 12);
             outerBorder.Margin = new Thickness(6);
             outerBorder.CornerRadius = new CornerRadius(14);
+            outerBorder.Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                Color = Colors.Black, BlurRadius = 16, ShadowDepth = 4, Opacity = 0.55
+            };
             innerBorder.Margin = new Thickness(4);
             innerBorder.CornerRadius = new CornerRadius(11);
             txtMiniPercent.Visibility = Visibility.Collapsed;
 
+            SizeToContent = SizeToContent.Manual;
             MinHeight = 160;
+            MinWidth = 435;
             ResizeMode = ResizeMode.CanResizeWithGrip;
             Width = _savedWidth;
             Height = _savedHeight;

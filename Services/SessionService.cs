@@ -51,6 +51,14 @@ public class SessionService
         {
             // Resume today's session
             LoginTime = DateTime.Parse(_store.CurrentSession.FirstLoginTime);
+
+            // Restore paused time from disk
+            _totalPausedTime = TimeSpan.FromMinutes(_store.CurrentSession.TotalPausedMinutes);
+            if (_store.CurrentSession.IsPaused && _store.CurrentSession.PauseStartTime != null)
+            {
+                _isPaused = true;
+                _pauseStartTime = DateTime.Parse(_store.CurrentSession.PauseStartTime);
+            }
         }
         else
         {
@@ -128,6 +136,23 @@ public class SessionService
     public void TogglePause()
     {
         if (_isPaused) Resume(); else Pause();
+    }
+
+    /// <summary>Reset the current day: new login time = now, clear all pause time.</summary>
+    public void ResetDay()
+    {
+        _isPaused = false;
+        _totalPausedTime = TimeSpan.Zero;
+        _overtimeNotified = false;
+        LoginTime = DateTime.Now;
+
+        _store.CurrentSession = new DaySession
+        {
+            Date = _currentDate,
+            FirstLoginTime = LoginTime.ToString("o")
+        };
+        StorageService.SaveSessions(_store);
+        PauseStateChanged?.Invoke(false);
     }
 
     // ── Time calculations ─────────────────────────────────────
@@ -240,6 +265,9 @@ public class SessionService
         if (_store.CurrentSession != null)
         {
             _store.CurrentSession.TotalEffectiveWorkMinutes = GetEffectiveWorkTime().TotalMinutes;
+            _store.CurrentSession.TotalPausedMinutes = TotalPausedTime.TotalMinutes;
+            _store.CurrentSession.IsPaused = _isPaused;
+            _store.CurrentSession.PauseStartTime = _isPaused ? _pauseStartTime.ToString("o") : null;
             _store.CurrentSession.LastActivityTime = DateTime.Now.ToString("o");
             StorageService.SaveSessions(_store);
         }
