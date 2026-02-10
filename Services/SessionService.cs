@@ -1,10 +1,12 @@
 using DayloaderClock.Models;
+using Microsoft.Win32;
 
 namespace DayloaderClock.Services;
 
 /// <summary>
 /// Core time-tracking logic for the work day.
 /// Calculates effective work time, progress, overtime, and estimated end time.
+/// Lunch break is detected via screen lock/unlock during the configured lunch window.
 /// </summary>
 public class SessionService
 {
@@ -17,6 +19,12 @@ public class SessionService
     private bool _isPaused;
     private DateTime _pauseStartTime;
     private TimeSpan _totalPausedTime = TimeSpan.Zero;
+
+    // ── Lunch tracking (screen-lock based) ────────────────────
+    private bool _isScreenLocked;
+    private DateTime _lockTimeStamp;
+    private TimeSpan _totalLunchTime = TimeSpan.Zero;
+    private bool _isOnLunch; // true while screen is locked during lunch window
 
     /// <summary>Time the user first logged in today.</summary>
     public DateTime LoginTime { get; private set; }
@@ -41,6 +49,45 @@ public class SessionService
         _store = StorageService.LoadSessions();
         _currentDate = "";
         Initialize();
+
+        // Listen for screen lock / unlock
+        SystemEvents.SessionSwitch += OnSessionSwitch;
+    }
+
+    ~SessionService()
+    {
+        SystemEvents.SessionSwitch -= OnSessionSwitch;
+    }
+
+    private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
+    {
+        if (e.Reason == SessionSwitchReason.SessionLock)
+        {
+            _isScreenLocked = true;
+            _lockTimeStamp = DateTime.Now;
+
+            // If we're inside the lunch window, flag as lunch
+            if (IsInLunchWindow)
+                _isOnLunch = true;
+        }
+        else if (e.Reason == SessionSwitchReason.SessionUnlock)
+        {
+            if (_isScreenLocked)
+            {
+                var lockDuration = DateTime.Now - _lockTimeStamp;
+
+                if (_isOnLunch)
+                {
+                    // All time spent locked counts as lunch (capped to configured max)
+                    var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+                    var lunchSoFar = _totalLunchTime + lockDuration;
+                    _totalLunchTime = lunchSoFar > maxLunch ? maxLunch : lunchSoFar;
+                    _isOnLunch = false;
+                }
+
+                _isScreenLocked = false;
+            }
+        }
     }
 
     private void Initialize()
@@ -59,6 +106,9 @@ public class SessionService
                 _isPaused = true;
                 _pauseStartTime = DateTime.Parse(_store.CurrentSession.PauseStartTime);
             }
+
+            // Restore lunch time from disk
+            _totalLunchTime = TimeSpan.FromMinutes(_store.CurrentSession.TotalLunchMinutes);
         }
         else
         {
@@ -143,6 +193,8 @@ public class SessionService
     {
         _isPaused = false;
         _totalPausedTime = TimeSpan.Zero;
+        _totalLunchTime = TimeSpan.Zero;
+        _isOnLunch = false;
         _overtimeNotified = false;
         LoginTime = DateTime.Now;
 
@@ -158,8 +210,8 @@ public class SessionService
     // ── Time calculations ─────────────────────────────────────
 
     /// <summary>
-    /// Effective work time = elapsed since login − lunch overlap.
-    /// The countdown never stops once logged in; lunch time is simply excluded.
+    /// Effective work time = elapsed since login − actual lunch taken − paused time.
+    /// Lunch is only deducted when the screen was locked during the lunch window.
     /// </summary>
     public TimeSpan GetEffectiveWorkTime()
     {
@@ -167,20 +219,16 @@ public class SessionService
         var totalElapsed = now - LoginTime;
         if (totalElapsed < TimeSpan.Zero) totalElapsed = TimeSpan.Zero;
 
-        // Calculate overlap between [LoginTime, Now] and [LunchStart, LunchEnd]
-        var lunchStart = DateTime.Today.Add(_settings.GetLunchStart());
-        var lunchEnd = DateTime.Today.Add(_settings.GetLunchEnd());
-
-        var overlapStart = LoginTime > lunchStart ? LoginTime : lunchStart;
-        var overlapEnd = now < lunchEnd ? now : lunchEnd;
-
-        var lunchOverlap = TimeSpan.Zero;
-        if (overlapStart < overlapEnd)
+        // Current lunch time being recorded (screen still locked during lunch)
+        var currentLunchExtra = TimeSpan.Zero;
+        if (_isScreenLocked && _isOnLunch)
         {
-            lunchOverlap = overlapEnd - overlapStart;
+            var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+            var potentialTotal = _totalLunchTime + (now - _lockTimeStamp);
+            currentLunchExtra = (potentialTotal > maxLunch ? maxLunch : potentialTotal) - _totalLunchTime;
         }
 
-        var effective = totalElapsed - lunchOverlap - TotalPausedTime;
+        var effective = totalElapsed - (_totalLunchTime + currentLunchExtra) - TotalPausedTime;
         return effective > TimeSpan.Zero ? effective : TimeSpan.Zero;
     }
 
@@ -213,7 +261,8 @@ public class SessionService
 
     public bool IsOvertime => GetEffectiveWorkTime().TotalMinutes > _settings.WorkDayMinutes;
 
-    public bool IsLunchTime
+    /// <summary>Whether we are currently in the configured lunch time window.</summary>
+    private bool IsInLunchWindow
     {
         get
         {
@@ -222,8 +271,13 @@ public class SessionService
         }
     }
 
+    /// <summary>Whether the user is currently on lunch (screen locked during lunch window).</summary>
+    public bool IsLunchTime => _isOnLunch && _isScreenLocked;
+
     /// <summary>
     /// Estimated departure time, accounting for remaining lunch if applicable.
+    /// If no lunch has been taken yet and we're before the lunch window,
+    /// we assume the full configured duration will be taken.
     /// </summary>
     public DateTime GetEstimatedEndTime()
     {
@@ -231,20 +285,23 @@ public class SessionService
         var now = DateTime.Now;
         var lunchStart = DateTime.Today.Add(_settings.GetLunchStart());
         var lunchEnd = DateTime.Today.Add(_settings.GetLunchEnd());
+        var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+        var lunchRemaining = maxLunch - _totalLunchTime;
+        if (lunchRemaining < TimeSpan.Zero) lunchRemaining = TimeSpan.Zero;
 
-        if (now < lunchStart)
+        if (now < lunchStart && lunchRemaining > TimeSpan.Zero)
         {
-            // Lunch hasn't started → add full lunch duration
-            return now + remaining + TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+            // Lunch hasn't started → assume full remaining lunch will be taken
+            return now + remaining + lunchRemaining;
         }
-        else if (now < lunchEnd)
+        else if (now < lunchEnd && lunchRemaining > TimeSpan.Zero)
         {
-            // Currently in lunch → add remaining lunch time
-            return now + remaining + (lunchEnd - now);
+            // In the lunch window with remaining lunch to take
+            return now + remaining + lunchRemaining;
         }
         else
         {
-            // Lunch already passed
+            // Lunch window passed or all lunch taken
             return now + remaining;
         }
     }
@@ -268,6 +325,7 @@ public class SessionService
             _store.CurrentSession.TotalPausedMinutes = TotalPausedTime.TotalMinutes;
             _store.CurrentSession.IsPaused = _isPaused;
             _store.CurrentSession.PauseStartTime = _isPaused ? _pauseStartTime.ToString("o") : null;
+            _store.CurrentSession.TotalLunchMinutes = _totalLunchTime.TotalMinutes;
             _store.CurrentSession.LastActivityTime = DateTime.Now.ToString("o");
             StorageService.SaveSessions(_store);
         }

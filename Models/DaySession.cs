@@ -28,6 +28,9 @@ public class DaySession
 
     /// <summary>Whether the day was completed (8h reached or day ended)</summary>
     public bool DayCompleted { get; set; }
+
+    /// <summary>Total lunch minutes actually taken (screen locked during lunch window)</summary>
+    public double TotalLunchMinutes { get; set; }
 }
 
 /// <summary>
