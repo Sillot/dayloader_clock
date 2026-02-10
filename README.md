@@ -1,31 +1,46 @@
 # Dayloader Clock
 
-A Windows desktop app inspired by the **Dayloader Clock** concept by [Matty Benedetto](https://www.youtube.com/@MattBenedetto). It displays a visual progress bar of your workday that fills up segment by segment with a color gradient (green → yellow → orange → red).
+A Windows desktop app inspired by the **Dayloader Clock** concept by [Matty Benedetto](https://www.youtube.com/@MattBenedetto).
+A visual progress bar of your workday that fills up segment by segment with a color gradient (green → yellow → orange → red).
 
-## Tech Stack
+> Requires Windows 10/11 — .NET 8
 
-| Component | Technology |
+## Features
+
+- **Progress bar** with green → yellow → orange → red gradient and blinking last segment
+- **Time tracking** — start time, elapsed work time, remaining time, overtime counter
+- **Lunch break** automatically excluded from work time
+- **Pause / Resume** — freezes the timer (state persists across restarts)
+- **End of day** — stops tracking and minimizes to system tray
+- **Pomodoro** — focus timer (25 min default) with Windows Do Not Disturb activation
+- **Mini mode** — double-click the bar for a compact view (% + remaining time)
+- **System tray icon** — mini progress bar in the notification area
+- **Taskbar** — progress displayed in the Windows taskbar
+- **History** — monthly calendar with hours per day and monthly summary
+- **Export** — CSV and Excel (.xlsx)
+- **Auto-start** with Windows (optional)
+- **Floating window** — always on top, draggable, resizable
+
+## Settings
+
+| Setting | Default |
 |---|---|
-| Language | **C# 12** |
-| Framework | **.NET 8** |
-| UI | **WPF** (Windows Presentation Foundation) |
-| System tray | **Windows Forms** (`NotifyIcon`) |
-| Storage | **JSON** (`System.Text.Json`) — files in `%APPDATA%/DayloaderClock/` |
+| Work day duration | 8h |
+| Lunch break start | 12:00 |
+| Lunch break duration | 60 min |
+| Pomodoro duration | 25 min |
+| Do Not Disturb during Pomodoro | Yes |
+| Start with Windows | Yes |
 
-## Key Features
+## Installation
 
-- 80-segment progress bar with color gradient
-- Automatic lunch break handling (configurable)
-- Overtime detection and counter
-- System tray icon with mini preview
-- Always-on-top, draggable floating window
-- Auto-reset on day change
-- Optional auto-start with Windows
+Run `DayloaderClock.exe` — no installation required.
 
-## Getting Started
+Data is stored in `%APPDATA%/DayloaderClock/`.
+
+## Development
 
 ```bash
-dotnet run
+dotnet run                # run in development mode
+.\build.ps1               # build a self-contained executable (publish/)
 ```
-
-> Requires [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) + Windows 10/11
