@@ -54,26 +54,12 @@ public partial class HistoryWindow : Window
         if (_store.CurrentSession != null)
         {
             var today = _store.CurrentSession;
-            // Recalculate from timestamps if it's today
             if (today.Date == DateTime.Today.ToString("yyyy-MM-dd"))
             {
                 var settings = StorageService.LoadSettings();
-                var now = DateTime.Now;
-                if (DateTime.TryParse(today.FirstLoginTime, out var loginTime))
-                {
-                    var elapsed = now - loginTime;
-                    if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
-
-                    // Subtract lunch overlap
-                    var lunchStart = DateTime.Today.Add(settings.GetLunchStart());
-                    var lunchEnd = DateTime.Today.Add(settings.GetLunchEnd());
-                    var oStart = loginTime > lunchStart ? loginTime : lunchStart;
-                    var oEnd = now < lunchEnd ? now : lunchEnd;
-                    if (oStart < oEnd) elapsed -= (oEnd - oStart);
-
-                    if (elapsed > TimeSpan.Zero)
-                        today.TotalEffectiveWorkMinutes = elapsed.TotalMinutes;
-                }
+                var session = new SessionService(settings);
+                today.TotalEffectiveWorkMinutes = session.GetEffectiveWorkTime().TotalMinutes;
+                today.TotalLunchMinutes = session.GetLunchDeduction().TotalMinutes;
             }
             _sessionsByDate[today.Date] = today;
         }

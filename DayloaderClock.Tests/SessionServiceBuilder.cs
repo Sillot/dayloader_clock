@@ -10,7 +10,8 @@ namespace DayloaderClock.Tests;
 /// </summary>
 internal sealed class SessionServiceBuilder
 {
-    private AppSettings _settings = new();
+    // Default to no lunch deduction so non-lunch tests aren't affected
+    private AppSettings _settings = new() { LunchDurationMinutes = 0 };
     private IStorageService? _storage;
     private SessionStore _store = new();
     private FakeTimeProvider? _timeProvider;

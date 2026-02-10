@@ -229,8 +229,25 @@ public class SessionService
     // ── Time calculations ─────────────────────────────────────
 
     /// <summary>
-    /// Effective work time = elapsed since login − actual lunch taken − paused time.
-    /// Lunch is only deducted when the screen was locked during the lunch window.
+    /// Compute lunch deduction: overlap of [LoginTime, now] with the configured
+    /// lunch window, capped to the configured lunch duration.
+    /// </summary>
+    public TimeSpan GetLunchDeduction()
+    {
+        var now = Now;
+        var lunchStart = Today.Add(_settings.GetLunchStart());
+        var lunchEnd = Today.Add(_settings.GetLunchEnd());
+        var oStart = LoginTime > lunchStart ? LoginTime : lunchStart;
+        var oEnd = now < lunchEnd ? now : lunchEnd;
+        if (oStart >= oEnd) return TimeSpan.Zero;
+        var overlap = oEnd - oStart;
+        var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+        return overlap > maxLunch ? maxLunch : overlap;
+    }
+
+    /// <summary>
+    /// Effective work time = elapsed since login − lunch deduction − paused time.
+    /// Lunch is automatically deducted based on the configured lunch window.
     /// </summary>
     public TimeSpan GetEffectiveWorkTime()
     {
@@ -238,16 +255,7 @@ public class SessionService
         var totalElapsed = now - LoginTime;
         if (totalElapsed < TimeSpan.Zero) totalElapsed = TimeSpan.Zero;
 
-        // Current lunch time being recorded (screen still locked during lunch)
-        var currentLunchExtra = TimeSpan.Zero;
-        if (_isScreenLocked && _isOnLunch)
-        {
-            var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
-            var potentialTotal = _totalLunchTime + (now - _lockTimeStamp);
-            currentLunchExtra = (potentialTotal > maxLunch ? maxLunch : potentialTotal) - _totalLunchTime;
-        }
-
-        var effective = totalElapsed - (_totalLunchTime + currentLunchExtra) - TotalPausedTime;
+        var effective = totalElapsed - GetLunchDeduction() - TotalPausedTime;
         return effective > TimeSpan.Zero ? effective : TimeSpan.Zero;
     }
 
@@ -305,25 +313,19 @@ public class SessionService
     {
         var remaining = GetRemainingTime();
         var now = Now;
-        var lunchStart = Today.Add(_settings.GetLunchStart());
         var lunchEnd = Today.Add(_settings.GetLunchEnd());
         var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
-        var lunchRemaining = maxLunch - _totalLunchTime;
+        var lunchRemaining = maxLunch - GetLunchDeduction();
         if (lunchRemaining < TimeSpan.Zero) lunchRemaining = TimeSpan.Zero;
 
-        if (now < lunchStart && lunchRemaining > TimeSpan.Zero)
+        if (now < lunchEnd && lunchRemaining > TimeSpan.Zero)
         {
-            // Lunch hasn't started → assume full remaining lunch will be taken
-            return now + remaining + lunchRemaining;
-        }
-        else if (now < lunchEnd && lunchRemaining > TimeSpan.Zero)
-        {
-            // In the lunch window with remaining lunch to take
+            // Lunch window not fully elapsed → remaining lunch will still be deducted
             return now + remaining + lunchRemaining;
         }
         else
         {
-            // Lunch window passed or all lunch taken
+            // Lunch window passed or all lunch deducted
             return now + remaining;
         }
     }
@@ -347,7 +349,7 @@ public class SessionService
             _store.CurrentSession.TotalPausedMinutes = TotalPausedTime.TotalMinutes;
             _store.CurrentSession.IsPaused = _isPaused;
             _store.CurrentSession.PauseStartTime = _isPaused ? _pauseStartTime.ToString("o") : null;
-            _store.CurrentSession.TotalLunchMinutes = _totalLunchTime.TotalMinutes;
+            _store.CurrentSession.TotalLunchMinutes = GetLunchDeduction().TotalMinutes;
             _store.CurrentSession.LastActivityTime = Now.ToString("o");
             _storage.SaveSessions(_store);
         }
