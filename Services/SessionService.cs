@@ -11,6 +11,8 @@ namespace DayloaderClock.Services;
 public class SessionService
 {
     private AppSettings _settings;
+    private readonly IStorageService _storage;
+    private readonly TimeProvider _timeProvider;
     private SessionStore _store;
     private string _currentDate;
     private bool _overtimeNotified;
@@ -34,7 +36,7 @@ public class SessionService
 
     /// <summary>Total time spent paused today.</summary>
     public TimeSpan TotalPausedTime => _isPaused
-        ? _totalPausedTime + (DateTime.Now - _pauseStartTime)
+        ? _totalPausedTime + (Now - _pauseStartTime)
         : _totalPausedTime;
 
     /// <summary>Fired once when overtime starts (effective work > work day duration).</summary>
@@ -43,10 +45,23 @@ public class SessionService
     /// <summary>Fired when pause state changes.</summary>
     public event Action<bool>? PauseStateChanged;
 
+    /// <summary>Current local time from the injected TimeProvider.</summary>
+    private DateTime Now => _timeProvider.GetLocalNow().DateTime;
+
+    /// <summary>Current local date from the injected TimeProvider.</summary>
+    private DateTime Today => _timeProvider.GetLocalNow().Date;
+
     public SessionService(AppSettings settings)
+        : this(settings, StorageService.Instance, TimeProvider.System)
+    {
+    }
+
+    public SessionService(AppSettings settings, IStorageService storage, TimeProvider timeProvider)
     {
         _settings = settings;
-        _store = StorageService.LoadSessions();
+        _storage = storage;
+        _timeProvider = timeProvider;
+        _store = _storage.LoadSessions();
         _currentDate = "";
         Initialize();
 
@@ -64,7 +79,7 @@ public class SessionService
         if (e.Reason == SessionSwitchReason.SessionLock)
         {
             _isScreenLocked = true;
-            _lockTimeStamp = DateTime.Now;
+            _lockTimeStamp = Now;
 
             // If we're inside the lunch window, flag as lunch
             if (IsInLunchWindow)
@@ -74,7 +89,7 @@ public class SessionService
         {
             if (_isScreenLocked)
             {
-                var lockDuration = DateTime.Now - _lockTimeStamp;
+                var lockDuration = Now - _lockTimeStamp;
 
                 if (_isOnLunch)
                 {
@@ -92,7 +107,7 @@ public class SessionService
 
     private void Initialize()
     {
-        _currentDate = DateTime.Today.ToString("yyyy-MM-dd");
+        _currentDate = Today.ToString("yyyy-MM-dd");
 
         if (_store.CurrentSession != null && _store.CurrentSession.Date == _currentDate)
         {
@@ -120,13 +135,13 @@ public class SessionService
             }
 
             // Start a brand new session
-            LoginTime = DateTime.Now;
+            LoginTime = Now;
             _store.CurrentSession = new DaySession
             {
                 Date = _currentDate,
                 FirstLoginTime = LoginTime.ToString("o")
             };
-            StorageService.SaveSessions(_store);
+            _storage.SaveSessions(_store);
         }
     }
 
@@ -136,7 +151,7 @@ public class SessionService
     /// </summary>
     public bool CheckNewDay()
     {
-        var today = DateTime.Today.ToString("yyyy-MM-dd");
+        var today = Today.ToString("yyyy-MM-dd");
         if (today == _currentDate) return false;
 
         // Archive current session
@@ -149,14 +164,18 @@ public class SessionService
 
         // Start new day
         _currentDate = today;
-        LoginTime = DateTime.Now;
+        LoginTime = Now;
         _store.CurrentSession = new DaySession
         {
             Date = _currentDate,
             FirstLoginTime = LoginTime.ToString("o")
         };
         _overtimeNotified = false;
-        StorageService.SaveSessions(_store);
+        _totalPausedTime = TimeSpan.Zero;
+        _totalLunchTime = TimeSpan.Zero;
+        _isPaused = false;
+        _isOnLunch = false;
+        _storage.SaveSessions(_store);
         return true;
     }
 
@@ -171,14 +190,14 @@ public class SessionService
     {
         if (_isPaused) return;
         _isPaused = true;
-        _pauseStartTime = DateTime.Now;
+        _pauseStartTime = Now;
         PauseStateChanged?.Invoke(true);
     }
 
     public void Resume()
     {
         if (!_isPaused) return;
-        _totalPausedTime += DateTime.Now - _pauseStartTime;
+        _totalPausedTime += Now - _pauseStartTime;
         _isPaused = false;
         PauseStateChanged?.Invoke(false);
     }
@@ -196,14 +215,14 @@ public class SessionService
         _totalLunchTime = TimeSpan.Zero;
         _isOnLunch = false;
         _overtimeNotified = false;
-        LoginTime = DateTime.Now;
+        LoginTime = Now;
 
         _store.CurrentSession = new DaySession
         {
             Date = _currentDate,
             FirstLoginTime = LoginTime.ToString("o")
         };
-        StorageService.SaveSessions(_store);
+        _storage.SaveSessions(_store);
         PauseStateChanged?.Invoke(false);
     }
 
@@ -215,7 +234,7 @@ public class SessionService
     /// </summary>
     public TimeSpan GetEffectiveWorkTime()
     {
-        var now = DateTime.Now;
+        var now = Now;
         var totalElapsed = now - LoginTime;
         if (totalElapsed < TimeSpan.Zero) totalElapsed = TimeSpan.Zero;
 
@@ -266,7 +285,7 @@ public class SessionService
     {
         get
         {
-            var now = DateTime.Now.TimeOfDay;
+            var now = Now.TimeOfDay;
             return now >= _settings.GetLunchStart() && now < _settings.GetLunchEnd();
         }
     }
@@ -282,9 +301,9 @@ public class SessionService
     public DateTime GetEstimatedEndTime()
     {
         var remaining = GetRemainingTime();
-        var now = DateTime.Now;
-        var lunchStart = DateTime.Today.Add(_settings.GetLunchStart());
-        var lunchEnd = DateTime.Today.Add(_settings.GetLunchEnd());
+        var now = Now;
+        var lunchStart = Today.Add(_settings.GetLunchStart());
+        var lunchEnd = Today.Add(_settings.GetLunchEnd());
         var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
         var lunchRemaining = maxLunch - _totalLunchTime;
         if (lunchRemaining < TimeSpan.Zero) lunchRemaining = TimeSpan.Zero;
@@ -326,8 +345,8 @@ public class SessionService
             _store.CurrentSession.IsPaused = _isPaused;
             _store.CurrentSession.PauseStartTime = _isPaused ? _pauseStartTime.ToString("o") : null;
             _store.CurrentSession.TotalLunchMinutes = _totalLunchTime.TotalMinutes;
-            _store.CurrentSession.LastActivityTime = DateTime.Now.ToString("o");
-            StorageService.SaveSessions(_store);
+            _store.CurrentSession.LastActivityTime = Now.ToString("o");
+            _storage.SaveSessions(_store);
         }
     }
 }

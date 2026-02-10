@@ -21,6 +21,10 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Run tests
+        shell: pwsh
+        run: dotnet test DayloaderClock.Tests --nologo -v q
+
       - name: Extract version from tag
         id: version
         shell: pwsh

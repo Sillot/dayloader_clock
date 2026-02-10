@@ -121,7 +121,8 @@ The counter will be reset to zero.</value></data>
   <data name="History_Tooltip" xml:space="preserve"><value>{0}
 Login: {1}
 Last activity: {2}
-Effective work: {3}</value></data>
+Effective work: {3}
+Lunch break: {4}</value></data>
   <data name="History_CsvDialogTitle" xml:space="preserve"><value>Export history as CSV</value></data>
   <data name="History_XlsxDialogTitle" xml:space="preserve"><value>Export history as Excel</value></data>
   <data name="History_ExportSuccess" xml:space="preserve"><value>{0} export successful!
@@ -149,6 +150,7 @@ Effective work: {3}</value></data>
   <data name="Export_MinutesWorked" xml:space="preserve"><value>Minutes worked</value></data>
   <data name="Export_HoursWorked" xml:space="preserve"><value>Hours worked</value></data>
   <data name="Export_DayComplete" xml:space="preserve"><value>Day complete</value></data>
+  <data name="Export_LunchMinutes" xml:space="preserve"><value>Lunch (min)</value></data>
   <data name="Export_SheetName" xml:space="preserve"><value>History</value></data>
 
   <!-- Messages -->

@@ -121,7 +121,8 @@ Le compteur sera remis à zéro.</value></data>
   <data name="History_Tooltip" xml:space="preserve"><value>{0}
 Login : {1}
 Dernière activité : {2}
-Travail effectif : {3}</value></data>
+Travail effectif : {3}
+Pause déjeuner : {4}</value></data>
   <data name="History_CsvDialogTitle" xml:space="preserve"><value>Exporter l'historique en CSV</value></data>
   <data name="History_XlsxDialogTitle" xml:space="preserve"><value>Exporter l'historique en Excel</value></data>
   <data name="History_ExportSuccess" xml:space="preserve"><value>Export {0} réussi !
@@ -149,6 +150,7 @@ Travail effectif : {3}</value></data>
   <data name="Export_MinutesWorked" xml:space="preserve"><value>Minutes travaillées</value></data>
   <data name="Export_HoursWorked" xml:space="preserve"><value>Heures travaillées</value></data>
   <data name="Export_DayComplete" xml:space="preserve"><value>Journée complète</value></data>
+  <data name="Export_LunchMinutes" xml:space="preserve"><value>Déjeuner (min)</value></data>
   <data name="Export_SheetName" xml:space="preserve"><value>Historique</value></data>
 
   <!-- Messages -->

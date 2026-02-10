@@ -123,7 +123,8 @@ Compruebe la bandeja del sistema.</value></data>
   <data name="History_Tooltip" xml:space="preserve"><value>{0}
 Inicio: {1}
 Última actividad: {2}
-Trabajo efectivo: {3}</value></data>
+Trabajo efectivo: {3}
+Almuerzo: {4}</value></data>
   <data name="History_CsvDialogTitle" xml:space="preserve"><value>Exportar historial como CSV</value></data>
   <data name="History_XlsxDialogTitle" xml:space="preserve"><value>Exportar historial como Excel</value></data>
   <data name="History_ExportSuccess" xml:space="preserve"><value>¡Exportación {0} exitosa!
@@ -151,5 +152,6 @@ Trabajo efectivo: {3}</value></data>
   <data name="Export_MinutesWorked" xml:space="preserve"><value>Minutos trabajados</value></data>
   <data name="Export_HoursWorked" xml:space="preserve"><value>Horas trabajadas</value></data>
   <data name="Export_DayComplete" xml:space="preserve"><value>Jornada completa</value></data>
+  <data name="Export_LunchMinutes" xml:space="preserve"><value>Almuerzo (min)</value></data>
   <data name="Export_SheetName" xml:space="preserve"><value>Historial</value></data>
 </root>

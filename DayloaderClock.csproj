@@ -15,6 +15,13 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <!-- Exclude the test project subfolder from compilation -->
+  <ItemGroup>
+    <Compile Remove="DayloaderClock.Tests\**" />
+    <None Remove="DayloaderClock.Tests\**" />
+    <EmbeddedResource Remove="DayloaderClock.Tests\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />
   </ItemGroup>

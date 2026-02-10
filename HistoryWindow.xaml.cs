@@ -181,7 +181,8 @@ public partial class HistoryWindow : Window
 
                     cell.ToolTip = string.Format(Strings.History_Tooltip,
                         date.ToString("dd/MM/yyyy"), login, lastActivity,
-                        FormatDuration(session.TotalEffectiveWorkMinutes));
+                        FormatDuration(session.TotalEffectiveWorkMinutes),
+                        FormatDuration(session.TotalLunchMinutes));
                 }
                 else
                 {
@@ -292,14 +293,14 @@ public partial class HistoryWindow : Window
         {
             var sessions = GetAllSortedSessions();
             var sb = new StringBuilder();
-            sb.AppendLine($"{Strings.Export_Date};{Strings.Export_Login};{Strings.Export_LastActivity};{Strings.Export_MinutesWorked};{Strings.Export_HoursWorked};{Strings.Export_DayComplete}");
+            sb.AppendLine($"{Strings.Export_Date};{Strings.Export_Login};{Strings.Export_LastActivity};{Strings.Export_MinutesWorked};{Strings.Export_HoursWorked};{Strings.Export_LunchMinutes};{Strings.Export_DayComplete}");
 
             foreach (var s in sessions)
             {
                 var login = DateTime.TryParse(s.FirstLoginTime, out var lt) ? lt.ToString("HH:mm") : "";
                 var last = DateTime.TryParse(s.LastActivityTime, out var at) ? at.ToString("HH:mm") : "";
                 double hours = s.TotalEffectiveWorkMinutes / 60.0;
-                sb.AppendLine($"{s.Date};{login};{last};{s.TotalEffectiveWorkMinutes:F0};{hours:F2};{(s.DayCompleted ? Strings.History_Yes : Strings.History_No)}");
+                sb.AppendLine($"{s.Date};{login};{last};{s.TotalEffectiveWorkMinutes:F0};{hours:F2};{s.TotalLunchMinutes:F0};{(s.DayCompleted ? Strings.History_Yes : Strings.History_No)}");
             }
 
             File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
@@ -332,7 +333,7 @@ public partial class HistoryWindow : Window
             var ws = wb.Worksheets.Add(Strings.Export_SheetName);
 
             // Header
-            var headers = new[] { Strings.Export_Date, Strings.Export_Login, Strings.Export_LastActivity, Strings.Export_MinutesWorked, Strings.Export_HoursWorked, Strings.Export_DayComplete };
+            var headers = new[] { Strings.Export_Date, Strings.Export_Login, Strings.Export_LastActivity, Strings.Export_MinutesWorked, Strings.Export_HoursWorked, Strings.Export_LunchMinutes, Strings.Export_DayComplete };
             for (int c = 0; c < headers.Length; c++)
             {
                 var cell = ws.Cell(1, c + 1);
@@ -356,7 +357,8 @@ public partial class HistoryWindow : Window
                 ws.Cell(row, 3).Value = last;
                 ws.Cell(row, 4).Value = Math.Round(s.TotalEffectiveWorkMinutes);
                 ws.Cell(row, 5).Value = Math.Round(hours, 2);
-                ws.Cell(row, 6).Value = s.DayCompleted ? Strings.History_Yes : Strings.History_No;
+                ws.Cell(row, 6).Value = Math.Round(s.TotalLunchMinutes);
+                ws.Cell(row, 7).Value = s.DayCompleted ? Strings.History_Yes : Strings.History_No;
 
                 // Color row by hours
                 if (hours >= 8)

@@ -150,6 +150,7 @@ public class Strings
     public static string Export_MinutesWorked => GetString("Export_MinutesWorked");
     public static string Export_HoursWorked => GetString("Export_HoursWorked");
     public static string Export_DayComplete => GetString("Export_DayComplete");
+    public static string Export_LunchMinutes => GetString("Export_LunchMinutes");
     public static string Export_SheetName => GetString("Export_SheetName");
 
     // Messages
