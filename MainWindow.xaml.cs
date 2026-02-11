@@ -125,7 +125,8 @@ public partial class MainWindow : Window
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         _timer.Tick += (_, _) =>
         {
-            _session.CheckNewDay();
+            if (_session.CheckNewDay())
+                ResetStoppedState();
             UpdateDisplay();
             _session.CheckAndNotifyOvertime();
             _session.SaveState();
@@ -533,6 +534,30 @@ public partial class MainWindow : Window
 
         // Minimize to tray
         Hide();
+    }
+
+    /// <summary>
+    /// Reset the stopped state and UI when a new day is detected.
+    /// Unlike ResumeDay(), this does not call session.Resume() since
+    /// the session has already been reset by CheckNewDay().
+    /// </summary>
+    private void ResetStoppedState()
+    {
+        _isStopped = false;
+        _prevBarFilled = -1;
+        _prevTrayFilled = -1;
+        _prevPomodoroFilled = -1;
+
+        btnStop.Content = "\u23F9";  // ⏹
+        btnStop.ToolTip = Strings.Tooltip_EndDay;
+        btnPause.IsEnabled = true;
+        btnPause.Content = "\u23F8";  // ⏸
+        btnPause.ToolTip = Strings.Tooltip_Pause;
+        txtPauseIndicator.Visibility = Visibility.Collapsed;
+        txtStopIndicator.Visibility = Visibility.Collapsed;
+        _trayPauseItem.Text = Strings.Tray_Pause;
+        _trayPauseItem.Visible = true;
+        _trayStopItem.Text = Strings.Tray_EndDay;
     }
 
     private void ResumeDay()

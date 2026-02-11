@@ -87,6 +87,10 @@ public class SessionService : IDisposable
             // If we're inside the lunch window, flag as lunch
             if (IsInLunchWindow)
                 _isOnLunch = true;
+
+            // Auto-pause when locking the screen after the work day is complete
+            if (IsOvertime && !_isPaused)
+                Pause();
         }
         else if (e.Reason == SessionSwitchReason.SessionUnlock && _isScreenLocked)
         {
