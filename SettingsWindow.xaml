@@ -214,8 +214,6 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
@@ -249,31 +247,20 @@
                           Content="{x:Static res:Strings.Settings_AutoStart}"
                           Margin="0,4,0,0" IsChecked="True"/>
 
-                <!-- Pomodoro duration -->
-                <StackPanel Grid.Row="5" Margin="0,12,0,12">
-                    <TextBlock Text="{x:Static res:Strings.Settings_PomodoroDuration}" Style="{StaticResource Label}"/>
-                    <TextBox x:Name="txtPomodoro" Text="25"/>
-                </StackPanel>
-
-                <!-- Pomodoro DND -->
-                <CheckBox Grid.Row="6" x:Name="chkPomodoroDnd"
-                          Content="{x:Static res:Strings.Settings_PomodoroDnd}"
-                          Margin="0,0,0,0" IsChecked="True"/>
-
                 <!-- Language -->
-                <StackPanel Grid.Row="7" Margin="0,12,0,0">
+                <StackPanel Grid.Row="5" Margin="0,12,0,0">
                     <TextBlock Text="{x:Static res:Strings.Settings_Language}" Style="{StaticResource Label}"/>
                     <ComboBox x:Name="cmbLanguage"/>
                 </StackPanel>
 
                 <!-- Version -->
-                <TextBlock Grid.Row="8" Text="v1.0.0" x:Name="txtVersion"
+                <TextBlock Grid.Row="6" Text="v1.0.0" x:Name="txtVersion"
                            Foreground="#8A7560" FontSize="10" FontFamily="Consolas"
                            HorizontalAlignment="Left" VerticalAlignment="Center"
                            Opacity="0.6" Margin="0,4,0,0"/>
 
                 <!-- Buttons -->
-                <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="{x:Static res:Strings.Settings_Cancel}"
                             Style="{StaticResource WoodButton}"
                             Background="#3A2E1E" Foreground="#A89070"

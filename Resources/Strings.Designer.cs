@@ -59,8 +59,6 @@ public class Strings
     public static string Tooltip_Hide => GetString("Tooltip_Hide");
     public static string Tooltip_Resume => GetString("Tooltip_Resume");
     public static string Tooltip_ResumeDay => GetString("Tooltip_ResumeDay");
-    public static string Tooltip_Pomodoro => GetString("Tooltip_Pomodoro");
-    public static string Tooltip_StopPomodoro => GetString("Tooltip_StopPomodoro");
     public static string Tooltip_MiniMode => GetString("Tooltip_MiniMode");
 
     public static string StartTime => GetString("StartTime");
@@ -85,8 +83,6 @@ public class Strings
     public static string Tray_EndDay => GetString("Tray_EndDay");
     public static string Tray_Pause => GetString("Tray_Pause");
     public static string Tray_Resume => GetString("Tray_Resume");
-    public static string Tray_Pomodoro => GetString("Tray_Pomodoro");
-    public static string Tray_StopPomodoro => GetString("Tray_StopPomodoro");
     public static string Tray_ResetDay => GetString("Tray_ResetDay");
     public static string Tray_History => GetString("Tray_History");
     public static string Tray_Settings => GetString("Tray_Settings");
@@ -95,9 +91,6 @@ public class Strings
     // ── Messages / Notifications ──────────────────────────────
     public static string Msg_ResetConfirm => GetString("Msg_ResetConfirm");
     public static string Msg_OvertimeStarted => GetString("Msg_OvertimeStarted");
-    public static string Msg_PomodoroFocus => GetString("Msg_PomodoroFocus");
-    public static string Msg_PomodoroCompleted => GetString("Msg_PomodoroCompleted");
-    public static string Msg_PomodoroBreak => GetString("Msg_PomodoroBreak");
     public static string Msg_LunchBreak => GetString("Msg_LunchBreak");
 
     // ── Settings Window ───────────────────────────────────────
@@ -107,8 +100,6 @@ public class Strings
     public static string Settings_LunchStart => GetString("Settings_LunchStart");
     public static string Settings_LunchDuration => GetString("Settings_LunchDuration");
     public static string Settings_AutoStart => GetString("Settings_AutoStart");
-    public static string Settings_PomodoroDuration => GetString("Settings_PomodoroDuration");
-    public static string Settings_PomodoroDnd => GetString("Settings_PomodoroDnd");
     public static string Settings_Cancel => GetString("Settings_Cancel");
     public static string Settings_Save => GetString("Settings_Save");
     public static string Settings_Language => GetString("Settings_Language");
@@ -116,7 +107,6 @@ public class Strings
     public static string Settings_Error_WorkHours => GetString("Settings_Error_WorkHours");
     public static string Settings_Error_LunchStart => GetString("Settings_Error_LunchStart");
     public static string Settings_Error_LunchDuration => GetString("Settings_Error_LunchDuration");
-    public static string Settings_Error_Pomodoro => GetString("Settings_Error_Pomodoro");
     public static string Settings_Error_Title => GetString("Settings_Error_Title");
 
     // ── History Window ────────────────────────────────────────

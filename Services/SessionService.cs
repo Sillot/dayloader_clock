@@ -34,6 +34,9 @@ public class SessionService : IDisposable
     /// <summary>Time the user first logged in today.</summary>
     public DateTime LoginTime { get; private set; }
 
+    /// <summary>Configured max lunch duration.</summary>
+    private TimeSpan MaxLunch => TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+
     /// <summary>Whether the clock is currently paused.</summary>
     public bool IsPaused => _isPaused;
 
@@ -103,11 +106,9 @@ public class SessionService : IDisposable
 
             if (_isOnLunch)
             {
-                // Lock during lunch window: the lock duration counts as lunch
-                // (capped to the configured maximum)
-                var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
+                // Lock during lunch window: the lock duration counts as lunch (capped)
                 var lunchSoFar = _totalLunchTime + lockDuration;
-                _totalLunchTime = lunchSoFar > maxLunch ? maxLunch : lunchSoFar;
+                _totalLunchTime = lunchSoFar > MaxLunch ? MaxLunch : lunchSoFar;
                 _isOnLunch = false;
                 // Mark that a real lunch was taken so GetLunchDeduction uses the
                 // actual lock-based duration instead of the theoretical window
@@ -150,12 +151,7 @@ public class SessionService : IDisposable
 
             // Start a brand new session
             LoginTime = Now;
-            _store.CurrentSession = new DaySession
-            {
-                Date = _currentDate,
-                FirstLoginTime = LoginTime.ToString("o")
-            };
-            _storage.SaveSessions(_store);
+            StartNewSession();
         }
     }
 
@@ -178,20 +174,8 @@ public class SessionService : IDisposable
 
         // Start new day
         _currentDate = today;
-        LoginTime = Now;
-        _store.CurrentSession = new DaySession
-        {
-            Date = _currentDate,
-            FirstLoginTime = LoginTime.ToString("o")
-        };
-        _overtimeNotified = false;
-        _lunchNotified = false;
-        _totalPausedTime = TimeSpan.Zero;
-        _totalLunchTime = TimeSpan.Zero;
-        _lunchTaken = false;
-        _isPaused = false;
-        _isOnLunch = false;
-        _storage.SaveSessions(_store);
+        ResetTracking();
+        StartNewSession();
         return true;
     }
 
@@ -226,21 +210,33 @@ public class SessionService : IDisposable
     /// <summary>Reset the current day: new login time = now, clear all pause time.</summary>
     public void ResetDay()
     {
+        ResetTracking();
+        StartNewSession();
+        PauseStateChanged?.Invoke(false);
+    }
+
+    /// <summary>Clear all in-memory tracking state for a fresh day.</summary>
+    private void ResetTracking()
+    {
         _isPaused = false;
         _totalPausedTime = TimeSpan.Zero;
         _totalLunchTime = TimeSpan.Zero;
         _lunchTaken = false;
         _isOnLunch = false;
         _overtimeNotified = false;
+        _lunchNotified = false;
         LoginTime = Now;
+    }
 
+    /// <summary>Create and persist a new DaySession for the current date.</summary>
+    private void StartNewSession()
+    {
         _store.CurrentSession = new DaySession
         {
             Date = _currentDate,
             FirstLoginTime = LoginTime.ToString("o")
         };
         _storage.SaveSessions(_store);
-        PauseStateChanged?.Invoke(false);
     }
 
     // ── Time calculations ─────────────────────────────────────
@@ -261,10 +257,8 @@ public class SessionService : IDisposable
         // Currently locked during lunch: deduction grows with lock duration (capped)
         if (_isOnLunch && _isScreenLocked)
         {
-            var lockDuration = Now - _lockTimeStamp;
-            var soFar = _totalLunchTime + lockDuration;
-            var maxLunch = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
-            return soFar > maxLunch ? maxLunch : soFar;
+            var soFar = _totalLunchTime + (Now - _lockTimeStamp);
+            return soFar > MaxLunch ? MaxLunch : soFar;
         }
 
         // Fallback: theoretical overlap with the configured lunch window
@@ -275,8 +269,7 @@ public class SessionService : IDisposable
         var oEnd = now < lunchEnd ? now : lunchEnd;
         if (oStart >= oEnd) return TimeSpan.Zero;
         var overlap = oEnd - oStart;
-        var max = TimeSpan.FromMinutes(_settings.LunchDurationMinutes);
-        return overlap > max ? max : overlap;
+        return overlap > MaxLunch ? MaxLunch : overlap;
     }
 
     /// <summary>

@@ -23,24 +23,14 @@ public partial class MainWindow : Window
     private DispatcherTimer _timer = null!;
     private System.Windows.Forms.NotifyIcon _trayIcon = null!;
     private System.Windows.Forms.ToolStripMenuItem _trayPauseItem = null!;
-    private System.Windows.Forms.ToolStripMenuItem _trayPomodoroItem = null!;
     private System.Windows.Forms.ToolStripMenuItem _trayStopItem = null!;
     private ContextMenu? _windowContextMenu;
     private bool _isExiting;
     private bool _isStopped;
 
-    // ── Pomodoro ──────────────────────────────────────────────
-    private bool _pomodoroActive;
-
-    private DateTime _pomodoroEndTime;
-    private DateTime _pomodoroStartTime;
-    private DispatcherTimer? _pomodoroTimer;
-
     // ── Blink (last segment heartbeat) ───────────────────────
     private Rectangle? _lastFilledSegment;
-    private Rectangle? _lastPomodoroSegment;
     private int _prevBarFilled = -1;
-    private int _prevPomodoroFilled = -1;
     private int _prevTrayFilled = -1;
     private DispatcherTimer? _blinkTimer;
     private bool _blinkOn = true;
@@ -68,9 +58,6 @@ public partial class MainWindow : Window
         _session.OvertimeStarted += OnOvertimeStarted;
         _session.LunchBreakStarted += OnLunchBreakStarted;
         _session.PauseStateChanged += OnPauseStateChanged;
-
-        // Set localized Pomodoro tooltip (after _settings is loaded)
-        btnPomodoro.ToolTip = string.Format(Strings.Tooltip_Pomodoro, _settings.PomodoroMinutes);
 
         InitializeTrayIcon();
         InitializeWindowContextMenu();
@@ -112,8 +99,6 @@ public partial class MainWindow : Window
         menu.Items.Add(_trayStopItem);
         _trayPauseItem = new System.Windows.Forms.ToolStripMenuItem(Strings.Tray_Pause, null, (_, _) => Dispatcher.Invoke(() => _session.TogglePause()));
         menu.Items.Add(_trayPauseItem);
-        _trayPomodoroItem = new System.Windows.Forms.ToolStripMenuItem(Strings.Tray_Pomodoro, null, (_, _) => Dispatcher.Invoke(TogglePomodoro));
-        menu.Items.Add(_trayPomodoroItem);
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
         menu.Items.Add(Strings.Tray_ResetDay, null, (_, _) => Dispatcher.Invoke(ResetDay));
         menu.Items.Add(Strings.Tray_History, null, (_, _) => Dispatcher.Invoke(OpenHistory));
@@ -160,13 +145,6 @@ public partial class MainWindow : Window
             _windowContextMenu.Items.Add(pauseItem);
         }
 
-        var pomodoroItem = new MenuItem
-        {
-            Header = _pomodoroActive ? Strings.Tray_StopPomodoro : Strings.Tray_Pomodoro,
-            Command = new RelayCommand(TogglePomodoro)
-        };
-        _windowContextMenu.Items.Add(pomodoroItem);
-
         _windowContextMenu.Items.Add(new Separator());
         _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_ResetDay, Command = new RelayCommand(ResetDay) });
         _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_History, Command = new RelayCommand(OpenHistory) });
@@ -205,8 +183,6 @@ public partial class MainWindow : Window
             _blinkOn = !_blinkOn;
             if (_lastFilledSegment != null && !_isStopped && !_session.IsPaused)
                 _lastFilledSegment.Opacity = _blinkOn ? 1.0 : 0.6;
-            if (_lastPomodoroSegment != null && _pomodoroActive)
-                _lastPomodoroSegment.Opacity = _blinkOn ? 1.0 : 0.5;
         };
         _blinkTimer.Start();
     }
@@ -515,10 +491,6 @@ public partial class MainWindow : Window
 
     private void ExitApp()
     {
-        // Stop Pomodoro and restore DND
-        if (_pomodoroActive)
-            StopPomodoro(cancelled: true);
-
         _isExiting = true;
         _timer.Stop();
         _session.SaveState();
@@ -631,7 +603,6 @@ public partial class MainWindow : Window
         _isStopped = false;
         _prevBarFilled = -1;
         _prevTrayFilled = -1;
-        _prevPomodoroFilled = -1;
 
         btnStop.Content = "\u23F9";  // ⏹
         btnStop.ToolTip = Strings.Tooltip_EndDay;
@@ -676,7 +647,6 @@ public partial class MainWindow : Window
         // Reset cached draw state
         _prevBarFilled = -1;
         _prevTrayFilled = -1;
-        _prevPomodoroFilled = -1;
 
         // Reset UI
         btnStop.Content = "\u23F9";
@@ -693,8 +663,6 @@ public partial class MainWindow : Window
 
         UpdateDisplay();
     }
-
-    private void Pomodoro_Click(object sender, RoutedEventArgs e) => TogglePomodoro();
 
     private void MiniMode_Click(object sender, RoutedEventArgs e) => ToggleMiniMode();
 
@@ -763,168 +731,6 @@ public partial class MainWindow : Window
             _miniModeLockedHeight = -1;
             Width = _savedWidth;
             Height = _savedHeight;
-        }
-    }
-
-    // ── Pomodoro ──────────────────────────────────────────────
-
-    private void TogglePomodoro()
-    {
-        if (_pomodoroActive)
-            StopPomodoro(cancelled: true);
-        else
-            StartPomodoro();
-    }
-
-    private void StartPomodoro()
-    {
-        _pomodoroActive = true;
-        _pomodoroStartTime = DateTime.Now;
-        _pomodoroEndTime = DateTime.Now.AddMinutes(_settings.PomodoroMinutes);
-
-        // Enable DND
-        if (_settings.PomodoroDndEnabled)
-            FocusService.EnableDnd();
-
-        // Visual feedback
-        btnPomodoro.Content = "\u23F9";  // ⏹
-        btnPomodoro.ToolTip = Strings.Tooltip_StopPomodoro;
-        _trayPomodoroItem.Text = Strings.Tray_StopPomodoro;
-
-        // Dedicated 1-second timer for countdown
-        _pomodoroTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        _pomodoroTimer.Tick += PomodoroTick;
-        _pomodoroTimer.Start();
-
-        UpdatePomodoroDisplay();
-
-        _trayIcon.ShowBalloonTip(
-            3000, "Pomodoro",
-            string.Format(Strings.Msg_PomodoroFocus, _settings.PomodoroMinutes),
-            System.Windows.Forms.ToolTipIcon.Info);
-    }
-
-    private void StopPomodoro(bool cancelled)
-    {
-        _pomodoroActive = false;
-        _pomodoroTimer?.Stop();
-        _pomodoroTimer = null;
-
-        // Restore notifications
-        if (_settings.PomodoroDndEnabled)
-            FocusService.DisableDnd();
-
-        btnPomodoro.Content = "\uD83C\uDF45";
-        btnPomodoro.ToolTip = string.Format(Strings.Tooltip_Pomodoro, _settings.PomodoroMinutes);
-        _trayPomodoroItem.Text = Strings.Tray_Pomodoro;
-        pomodoroBar.Visibility = Visibility.Collapsed;
-        txtPomodoro.Text = "";
-        _prevPomodoroFilled = -1;
-        _lastPomodoroSegment = null;
-
-        if (!cancelled)
-        {
-            _trayIcon.ShowBalloonTip(
-                5000, Strings.Msg_PomodoroCompleted,
-                Strings.Msg_PomodoroBreak,
-                System.Windows.Forms.ToolTipIcon.Info);
-
-            // Flash the window
-            ShowWindow();
-        }
-    }
-
-    private void PomodoroTick(object? sender, EventArgs e)
-    {
-        if (!_pomodoroActive) return;
-
-        var remaining = _pomodoroEndTime - DateTime.Now;
-        if (remaining <= TimeSpan.Zero)
-        {
-            StopPomodoro(cancelled: false);
-            return;
-        }
-
-        UpdatePomodoroDisplay();
-    }
-
-    private void UpdatePomodoroDisplay()
-    {
-        if (!_pomodoroActive) return;
-
-        var remaining = _pomodoroEndTime - DateTime.Now;
-        if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
-
-        var totalDuration = (_pomodoroEndTime - _pomodoroStartTime).TotalSeconds;
-        var elapsed = totalDuration - remaining.TotalSeconds;
-        var progress = totalDuration > 0 ? elapsed / totalDuration : 0;
-        if (progress > 1) progress = 1;
-
-        txtPomodoro.Text = $"\uD83C\uDF45 {(int)remaining.TotalMinutes:D2}:{remaining.Seconds:D2}";
-        pomodoroBar.Visibility = Visibility.Visible;
-        DrawPomodoroBar(progress);
-    }
-
-    private static readonly Color PomodoroColorStart = Color.FromRgb(0xE8, 0x70, 0x30);
-    private static readonly Color PomodoroColorEnd = Color.FromRgb(0xCC, 0x30, 0x30);
-    private static readonly Color PomodoroColorEmpty = Color.FromRgb(0x30, 0x28, 0x1A);
-
-    private static Rectangle CreatePomodoroSegment(int index, int filledSegments, int segCount,
-        double segWidth, double canvasHeight)
-    {
-        var rect = new Rectangle
-        {
-            Width = segWidth,
-            Height = canvasHeight,
-            RadiusX = 1.5,
-            RadiusY = 1.5
-        };
-
-        if (index < filledSegments)
-        {
-            double t = segCount > 1 ? (double)index / (segCount - 1) : 0;
-            rect.Fill = new SolidColorBrush(ColorHelper.Lerp(PomodoroColorStart, PomodoroColorEnd, t));
-        }
-        else
-        {
-            rect.Fill = new SolidColorBrush(PomodoroColorEmpty);
-        }
-
-        return rect;
-    }
-
-    private void DrawPomodoroBar(double progress)
-    {
-        double canvasWidth = pomodoroCanvas.ActualWidth;
-        double canvasHeight = pomodoroCanvas.ActualHeight;
-        if (canvasWidth <= 0 || canvasHeight <= 0) return;
-
-        const double gap = 1.5;
-        var (segCount, segWidth) = CalculateSegmentLayout(canvasWidth, targetSegWidth: 9, gap);
-        if (segWidth < 1.5) segWidth = 1.5;
-
-        int filledSegments = (int)Math.Min(
-            Math.Floor(progress * segCount), segCount);
-        if (filledSegments == 0 && progress > 0)
-            filledSegments = 1;
-
-        if (filledSegments == _prevPomodoroFilled && pomodoroCanvas.Children.Count > 0)
-            return;
-        _prevPomodoroFilled = filledSegments;
-
-        pomodoroCanvas.Children.Clear();
-        _lastPomodoroSegment = null;
-
-        for (int i = 0; i < segCount; i++)
-        {
-            var rect = CreatePomodoroSegment(i, filledSegments, segCount, segWidth, canvasHeight);
-
-            if (i < filledSegments && i == filledSegments - 1)
-                _lastPomodoroSegment = rect;
-
-            Canvas.SetLeft(rect, i * (segWidth + gap));
-            Canvas.SetTop(rect, 0);
-            pomodoroCanvas.Children.Add(rect);
         }
     }
 

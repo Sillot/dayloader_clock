@@ -41,7 +41,6 @@ public class StorageServiceIntegrationTests : IDisposable
             WorkDayMinutes = 420,
             LunchStartTime = "11:30",
             LunchDurationMinutes = 45,
-            PomodoroMinutes = 30,
             Language = "fr"
         };
 
@@ -55,7 +54,6 @@ public class StorageServiceIntegrationTests : IDisposable
         Assert.Equal(420, loaded!.WorkDayMinutes);
         Assert.Equal("11:30", loaded.LunchStartTime);
         Assert.Equal(45, loaded.LunchDurationMinutes);
-        Assert.Equal(30, loaded.PomodoroMinutes);
         Assert.Equal("fr", loaded.Language);
     }
 

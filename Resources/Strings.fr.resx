@@ -44,8 +44,6 @@
   <data name="Tooltip_Hide" xml:space="preserve"><value>Masquer</value></data>
   <data name="Tooltip_Resume" xml:space="preserve"><value>Reprendre</value></data>
   <data name="Tooltip_ResumeDay" xml:space="preserve"><value>Reprendre la journée</value></data>
-  <data name="Tooltip_Pomodoro" xml:space="preserve"><value>Pomodoro ({0} min)</value></data>
-  <data name="Tooltip_StopPomodoro" xml:space="preserve"><value>Arrêter le Pomodoro</value></data>
   <data name="Tooltip_MiniMode" xml:space="preserve"><value>Mini mode</value></data>
 
   <data name="StartTime" xml:space="preserve"><value>Début : {0}</value></data>
@@ -72,8 +70,7 @@
   <data name="Tray_EndDay" xml:space="preserve"><value>⏹ Fin de journée</value></data>
   <data name="Tray_Pause" xml:space="preserve"><value>⏸ Pause</value></data>
   <data name="Tray_Resume" xml:space="preserve"><value>▶ Reprendre</value></data>
-  <data name="Tray_Pomodoro" xml:space="preserve"><value>Pomodoro</value></data>
-  <data name="Tray_StopPomodoro" xml:space="preserve"><value>⏹ Arrêter Pomodoro</value></data>
+
   <data name="Tray_ResetDay" xml:space="preserve"><value>Réinitialiser la journée</value></data>
   <data name="Tray_History" xml:space="preserve"><value>Historique</value></data>
   <data name="Tray_Settings" xml:space="preserve"><value>Paramètres</value></data>
@@ -85,9 +82,6 @@
   <data name="Msg_ResetConfirm" xml:space="preserve"><value>Réinitialiser la journée ?
 Le compteur sera remis à zéro.</value></data>
   <data name="Msg_OvertimeStarted" xml:space="preserve"><value>⚠ Journée de travail terminée ! Les heures supplémentaires commencent.</value></data>
-  <data name="Msg_PomodoroFocus" xml:space="preserve"><value>Focus {0} min — Ne Pas Déranger activé</value></data>
-  <data name="Msg_PomodoroCompleted" xml:space="preserve"><value>Pomodoro terminé !</value></data>
-  <data name="Msg_PomodoroBreak" xml:space="preserve"><value>Bravo ! Prends une petite pause.</value></data>
   <data name="Msg_LunchBreak" xml:space="preserve"><value>🍴 C'est l'heure de la pause déjeuner !</value></data>
 
   <!-- ══════════════════════════════════════════════════════════ -->
@@ -99,8 +93,7 @@ Le compteur sera remis à zéro.</value></data>
   <data name="Settings_LunchStart" xml:space="preserve"><value>Début pause déjeuner (HH:mm)</value></data>
   <data name="Settings_LunchDuration" xml:space="preserve"><value>Durée pause déjeuner (minutes)</value></data>
   <data name="Settings_AutoStart" xml:space="preserve"><value>  Démarrer automatiquement avec Windows</value></data>
-  <data name="Settings_PomodoroDuration" xml:space="preserve"><value>Durée Pomodoro (minutes)</value></data>
-  <data name="Settings_PomodoroDnd" xml:space="preserve"><value>  Activer Ne Pas Déranger pendant Pomodoro</value></data>
+
   <data name="Settings_Cancel" xml:space="preserve"><value>Annuler</value></data>
   <data name="Settings_Save" xml:space="preserve"><value>Enregistrer</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Langue</value></data>
@@ -108,7 +101,7 @@ Le compteur sera remis à zéro.</value></data>
   <data name="Settings_Error_WorkHours" xml:space="preserve"><value>Heures de travail invalides (entre 1 et 24).</value></data>
   <data name="Settings_Error_LunchStart" xml:space="preserve"><value>Heure de début de pause invalide (format HH:mm).</value></data>
   <data name="Settings_Error_LunchDuration" xml:space="preserve"><value>Durée de pause invalide (entre 0 et 180 minutes).</value></data>
-  <data name="Settings_Error_Pomodoro" xml:space="preserve"><value>Durée Pomodoro invalide (entre 1 et 120 minutes).</value></data>
+
   <data name="Settings_Error_Title" xml:space="preserve"><value>Erreur de validation</value></data>
 
   <!-- ══════════════════════════════════════════════════════════ -->

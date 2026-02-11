@@ -17,8 +17,6 @@ A visual progress bar of your workday that fills up segment by segment with a co
 - **Time tracking** — start time, elapsed work time, remaining time, overtime counter
 - **Lunch break** automatically excluded from work time
 - **Pause / Resume** — freezes the timer (state persists across restarts)
-- **End of day** — stops tracking and minimizes to system tray
-- **Pomodoro** — focus timer (25 min default) with Windows Do Not Disturb activation
 - **Mini mode** — double-click the bar for a compact view (% + remaining time)
 - **System tray icon** — mini progress bar in the notification area
 - **Taskbar** — progress displayed in the Windows taskbar
@@ -34,8 +32,6 @@ A visual progress bar of your workday that fills up segment by segment with a co
 | Work day duration | 8h |
 | Lunch break start | 12:00 |
 | Lunch break duration | 60 min |
-| Pomodoro duration | 25 min |
-| Do Not Disturb during Pomodoro | Yes |
 | Start with Windows | Yes |
 
 ## Installation

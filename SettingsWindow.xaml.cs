@@ -35,8 +35,6 @@ public partial class SettingsWindow : Window
         txtLunchStart.Text = currentSettings.LunchStartTime;
         txtLunchDuration.Text = currentSettings.LunchDurationMinutes.ToString();
         chkAutoStart.IsChecked = currentSettings.AutoStartWithWindows;
-        txtPomodoro.Text = currentSettings.PomodoroMinutes.ToString();
-        chkPomodoroDnd.IsChecked = currentSettings.PomodoroDndEnabled;
 
         // Language picker
         foreach (var (code, name) in Languages)
@@ -73,13 +71,6 @@ public partial class SettingsWindow : Window
             return;
         }
 
-        if (!int.TryParse(txtPomodoro.Text, out int pomodoroMinutes)
-            || pomodoroMinutes < 1 || pomodoroMinutes > 120)
-        {
-            ShowError(Strings.Settings_Error_Pomodoro);
-            return;
-        }
-
         // ── Apply ──
 
         var selectedLang = (cmbLanguage.SelectedItem as System.Windows.Controls.ComboBoxItem)?.Tag as string ?? "auto";
@@ -91,8 +82,6 @@ public partial class SettingsWindow : Window
             LunchStartTime = txtLunchStart.Text.Trim(),
             LunchDurationMinutes = lunchMinutes,
             AutoStartWithWindows = chkAutoStart.IsChecked == true,
-            PomodoroMinutes = pomodoroMinutes,
-            PomodoroDndEnabled = chkPomodoroDnd.IsChecked == true,
             Language = selectedLang,
             WindowLeft = Settings.WindowLeft,
             WindowTop = Settings.WindowTop,

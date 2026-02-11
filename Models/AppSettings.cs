@@ -34,12 +34,6 @@ public class AppSettings
     /// <summary>Saved mini mode width (-1 = default)</summary>
     public double MiniModeWidth { get; set; } = -1;
 
-    /// <summary>Pomodoro focus session duration in minutes (default 25)</summary>
-    public int PomodoroMinutes { get; set; } = 25;
-
-    /// <summary>Whether to enable Windows Do Not Disturb during Pomodoro</summary>
-    public bool PomodoroDndEnabled { get; set; } = true;
-
     /// <summary>UI language override: "auto" = system default, or a culture code like "en", "fr", "es"</summary>
     public string Language { get; set; } = "auto";
 

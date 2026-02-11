@@ -205,25 +205,6 @@
                         <Button x:Name="btnStop" Content="&#x23F9;" Style="{StaticResource ActionButton}"
                                 Click="Stop_Click" ToolTip="{x:Static res:Strings.Tooltip_EndDay}"/>
                     </StackPanel>
-
-                    <!-- Pomodoro: bar + button together on the right -->
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Grid x:Name="pomodoroBar" VerticalAlignment="Center"
-                              Visibility="Collapsed" Width="140" Height="14" Margin="0,0,4,0">
-                            <Border Background="#1E1A12" CornerRadius="4" ClipToBounds="True">
-                                <Canvas x:Name="pomodoroCanvas" ClipToBounds="True"/>
-                            </Border>
-                            <TextBlock x:Name="txtPomodoro" Text="" Foreground="#FFFFFF" FontSize="9"
-                                       FontWeight="Bold" FontFamily="Consolas"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock.Effect>
-                                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.8"/>
-                                </TextBlock.Effect>
-                            </TextBlock>
-                        </Grid>
-                        <Button x:Name="btnPomodoro" Content="🍅" Style="{StaticResource ActionButton}"
-                                Click="Pomodoro_Click"/>
-                    </StackPanel>
                 </Grid>
 
                 <!-- ═══ FOOTER ═══ -->
