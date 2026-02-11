@@ -66,6 +66,7 @@ public partial class MainWindow : Window
         _settings = StorageService.Instance.LoadSettings();
         _session = new SessionService(_settings);
         _session.OvertimeStarted += OnOvertimeStarted;
+        _session.LunchBreakStarted += OnLunchBreakStarted;
         _session.PauseStateChanged += OnPauseStateChanged;
 
         // Set localized Pomodoro tooltip (after _settings is loaded)
@@ -192,6 +193,7 @@ public partial class MainWindow : Window
                 ResetStoppedState();
             UpdateDisplay();
             _session.CheckAndNotifyOvertime();
+            _session.CheckAndNotifyLunch();
             _session.SaveState();
         };
         _timer.Start();
@@ -224,15 +226,15 @@ public partial class MainWindow : Window
         txtStartTime.Text = string.Format(Strings.StartTime, _session.LoginTime.ToString("HH:mm"));
         txtElapsed.Text = FormatTime(effectiveWork);
         txtPauseIndicator.Visibility = isPaused ? Visibility.Visible : Visibility.Collapsed;
-        txtLunch.Visibility = isLunch ? Visibility.Visible : Visibility.Collapsed;
+        txtLunch.Visibility = (isLunch && !_isMiniMode) ? Visibility.Visible : Visibility.Collapsed;
 
         UpdateOvertimeDisplay(isOvertime, remaining);
 
         var displayPercent = Math.Min(progress, 100);
         DrawBar(progress);
-        UpdateMiniModeText(isOvertime, isPaused, remaining, displayPercent);
+        UpdateMiniModeText(isOvertime, isPaused, isLunch, remaining, displayPercent);
         if (_isMiniMode) RebuildWindowContextMenu();
-        UpdateTrayIcon(progress, effectiveWork, displayPercent);
+        UpdateTrayIcon(progress, effectiveWork, displayPercent, isLunch);
         UpdateTaskbarProgress(displayPercent, isOvertime, isPaused);
     }
 
@@ -254,7 +256,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void UpdateMiniModeText(bool isOvertime, bool isPaused, TimeSpan remaining, double displayPercent)
+    private void UpdateMiniModeText(bool isOvertime, bool isPaused, bool isLunch, TimeSpan remaining, double displayPercent)
     {
         if (!_isMiniMode) return;
 
@@ -266,6 +268,10 @@ public partial class MainWindow : Window
         else if (_isStopped)
         {
             txtMiniPercent.Text = string.Format(Strings.Mini_Stop, displayPercent.ToString("0"));
+        }
+        else if (isLunch)
+        {
+            txtMiniPercent.Text = string.Format(Strings.Mini_Lunch, displayPercent.ToString("0"));
         }
         else if (isPaused)
         {
@@ -370,11 +376,11 @@ public partial class MainWindow : Window
         DrawBar(_session.GetProgressPercent());
     }
 
-    private void UpdateTrayIcon(double progress, TimeSpan effectiveWork, double displayPercent)
+    private void UpdateTrayIcon(double progress, TimeSpan effectiveWork, double displayPercent, bool isLunch)
     {
         int filled = (int)(Math.Min(progress, 100) / 100.0 * 14);
         bool isOvertime = progress > 100;
-        int trayKey = isOvertime ? -1 : filled;
+        int trayKey = (isOvertime ? -1 : filled) + (isLunch ? 1000 : 0);
 
         _trayIcon.Text = $"Dayloader \u2013 {displayPercent:F0}% ({FormatTime(effectiveWork)})";
 
@@ -383,7 +389,7 @@ public partial class MainWindow : Window
         _prevTrayFilled = trayKey;
 
         var oldIcon = _trayIcon.Icon;
-        _trayIcon.Icon = CreateTrayIcon(progress);
+        _trayIcon.Icon = CreateTrayIcon(progress, isLunch);
 
         if (oldIcon != null)
         {
@@ -397,12 +403,19 @@ public partial class MainWindow : Window
 
     // ── Tray icon drawing ─────────────────────────────────────
 
-    private static System.Drawing.Icon CreateTrayIcon(double progress)
+    private static System.Drawing.Icon CreateTrayIcon(double progress, bool isLunch = false)
     {
         using var bitmap = new System.Drawing.Bitmap(16, 16);
         using (var g = System.Drawing.Graphics.FromImage(bitmap))
         {
             g.Clear(System.Drawing.Color.FromArgb(44, 36, 25));
+
+            // Yellow border when lunch break
+            if (isLunch)
+            {
+                using var pen = new System.Drawing.Pen(System.Drawing.Color.FromArgb(255, 215, 0), 1);
+                g.DrawRectangle(pen, 0, 0, 15, 15);
+            }
 
             // Horizontal bar in the tray icon (16px wide, centered)
             int barHeight = 6;
@@ -521,6 +534,15 @@ public partial class MainWindow : Window
             "Dayloader Clock",
             Strings.Msg_OvertimeStarted,
             System.Windows.Forms.ToolTipIcon.Warning);
+    }
+
+    private void OnLunchBreakStarted()
+    {
+        _trayIcon.ShowBalloonTip(
+            5000,
+            "Dayloader Clock",
+            Strings.Msg_LunchBreak,
+            System.Windows.Forms.ToolTipIcon.Info);
     }
 
     private void RestoreWindowPosition()
@@ -705,6 +727,11 @@ public partial class MainWindow : Window
             SizeToContent = SizeToContent.Height;
             ResizeMode = ResizeMode.CanResizeWithGrip;
             _miniModeLockedHeight = -1; // will be set after layout
+
+            // Restore saved mini mode width
+            if (_settings.MiniModeWidth >= MinWidth)
+                Width = _settings.MiniModeWidth;
+
             Dispatcher.InvokeAsync(() =>
             {
                 _miniModeLockedHeight = ActualHeight;
@@ -930,8 +957,15 @@ public partial class MainWindow : Window
                 return;
             }
 
-            _settings.WindowWidth = Width;
-            _settings.WindowHeight = Height;
+            if (_isMiniMode)
+            {
+                _settings.MiniModeWidth = Width;
+            }
+            else
+            {
+                _settings.WindowWidth = Width;
+                _settings.WindowHeight = Height;
+            }
         }
     }
 }

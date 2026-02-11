@@ -77,6 +77,7 @@ public class Strings
     public static string Mini_Stop => GetString("Mini_Stop");
     public static string Mini_Paused => GetString("Mini_Paused");
     public static string Mini_Normal => GetString("Mini_Normal");
+    public static string Mini_Lunch => GetString("Mini_Lunch");
 
     // ── System Tray ───────────────────────────────────────────
     public static string Tray_Show => GetString("Tray_Show");
@@ -97,6 +98,7 @@ public class Strings
     public static string Msg_PomodoroFocus => GetString("Msg_PomodoroFocus");
     public static string Msg_PomodoroCompleted => GetString("Msg_PomodoroCompleted");
     public static string Msg_PomodoroBreak => GetString("Msg_PomodoroBreak");
+    public static string Msg_LunchBreak => GetString("Msg_LunchBreak");
 
     // ── Settings Window ───────────────────────────────────────
     public static string Settings_Title => GetString("Settings_Title");

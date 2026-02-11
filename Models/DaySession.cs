@@ -34,6 +34,9 @@ public class DaySession
     /// <summary>Total lunch minutes actually taken (screen locked during lunch window)</summary>
     public double TotalLunchMinutes { get; set; }
 
+    /// <summary>Whether the user already took and returned from lunch</summary>
+    public bool LunchTaken { get; set; }
+
     // ── Computed helpers ─────────────────────────────────────
 
     /// <summary>Effective work expressed in hours.</summary>

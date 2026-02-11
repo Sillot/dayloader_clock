@@ -44,6 +44,34 @@
             <Setter Property="Foreground" Value="#5A4228"/>
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border x:Name="box" Width="20" Height="20"
+                                    Background="#3A2E1E" BorderBrush="#5A4830"
+                                    BorderThickness="1" CornerRadius="4"
+                                    VerticalAlignment="Center">
+                                <Path x:Name="check" Data="M 3 8 L 7 12 L 14 4"
+                                      Stroke="#FFD700" StrokeThickness="2"
+                                      Margin="1,0,0,0"
+                                      Visibility="Collapsed"/>
+                            </Border>
+                            <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="box" Property="BorderBrush" Value="#8A7560"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <!-- ComboBox styling -->
         <Style TargetType="ComboBox">
@@ -235,7 +263,7 @@
                 <!-- Language -->
                 <StackPanel Grid.Row="7" Margin="0,12,0,0">
                     <TextBlock Text="{x:Static res:Strings.Settings_Language}" Style="{StaticResource Label}"/>
-                    <ComboBox x:Name="cmbLanguage"/>                    
+                    <ComboBox x:Name="cmbLanguage"/>
                 </StackPanel>
 
                 <!-- Version -->

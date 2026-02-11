@@ -31,6 +31,9 @@ public class AppSettings
     /// <summary>Saved window height (-1 = default)</summary>
     public double WindowHeight { get; set; } = -1;
 
+    /// <summary>Saved mini mode width (-1 = default)</summary>
+    public double MiniModeWidth { get; set; } = -1;
+
     /// <summary>Pomodoro focus session duration in minutes (default 25)</summary>
     public int PomodoroMinutes { get; set; } = 25;
 
