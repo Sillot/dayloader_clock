@@ -46,6 +46,7 @@
   <data name="Tooltip_ResumeDay" xml:space="preserve"><value>Reanudar jornada</value></data>
   <data name="Tooltip_Pomodoro" xml:space="preserve"><value>Pomodoro ({0} min)</value></data>
   <data name="Tooltip_StopPomodoro" xml:space="preserve"><value>Detener Pomodoro</value></data>
+  <data name="Tooltip_MiniMode" xml:space="preserve"><value>Modo mini</value></data>
 
   <data name="StartTime" xml:space="preserve"><value>Inicio: {0}</value></data>
   <data name="StartTimeDefault" xml:space="preserve"><value>Inicio: --:--</value></data>
@@ -66,7 +67,7 @@
   <!-- System Tray                                                -->
   <!-- ══════════════════════════════════════════════════════════ -->
   <data name="Tray_Show" xml:space="preserve"><value>Mostrar</value></data>
-  <data name="Tray_MiniMode" xml:space="preserve"><value>■ Modo mini</value></data>
+  <data name="Tray_MiniMode" xml:space="preserve"><value>❏ Modo mini</value></data>
   <data name="Tray_EndDay" xml:space="preserve"><value>⏹ Fin de jornada</value></data>
   <data name="Tray_Pause" xml:space="preserve"><value>⏸ Pausa</value></data>
   <data name="Tray_Resume" xml:space="preserve"><value>▶ Reanudar</value></data>

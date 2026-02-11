@@ -61,6 +61,7 @@ public class Strings
     public static string Tooltip_ResumeDay => GetString("Tooltip_ResumeDay");
     public static string Tooltip_Pomodoro => GetString("Tooltip_Pomodoro");
     public static string Tooltip_StopPomodoro => GetString("Tooltip_StopPomodoro");
+    public static string Tooltip_MiniMode => GetString("Tooltip_MiniMode");
 
     public static string StartTime => GetString("StartTime");
     public static string StartTimeDefault => GetString("StartTimeDefault");

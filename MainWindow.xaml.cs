@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private System.Windows.Forms.ToolStripMenuItem _trayPauseItem = null!;
     private System.Windows.Forms.ToolStripMenuItem _trayPomodoroItem = null!;
     private System.Windows.Forms.ToolStripMenuItem _trayStopItem = null!;
+    private ContextMenu? _windowContextMenu;
     private bool _isExiting;
     private bool _isStopped;
 
@@ -48,6 +49,7 @@ public partial class MainWindow : Window
     private bool _isMiniMode;
     private double _savedWidth;
     private double _savedHeight;
+    private double _miniModeLockedHeight = -1;
 
     // Colors are centralized in ColorHelper
 
@@ -60,7 +62,6 @@ public partial class MainWindow : Window
 
         // Version
         txtTitle.ToolTip = $"Dayloader Clock {AppVersion.Display}";
-        txtVersion.Text = AppVersion.Display;
 
         _settings = StorageService.Instance.LoadSettings();
         _session = new SessionService(_settings);
@@ -71,6 +72,7 @@ public partial class MainWindow : Window
         btnPomodoro.ToolTip = string.Format(Strings.Tooltip_Pomodoro, _settings.PomodoroMinutes);
 
         InitializeTrayIcon();
+        InitializeWindowContextMenu();
         InitializeTimer();
 
         UpdateDisplay();
@@ -116,8 +118,69 @@ public partial class MainWindow : Window
         menu.Items.Add(Strings.Tray_History, null, (_, _) => Dispatcher.Invoke(OpenHistory));
         menu.Items.Add(Strings.Tray_Settings, null, (_, _) => Dispatcher.Invoke(OpenSettings));
         menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+        var versionItem = new System.Windows.Forms.ToolStripMenuItem($"Dayloader Clock {AppVersion.Display}") { Enabled = false };
+        menu.Items.Add(versionItem);
         menu.Items.Add(Strings.Tray_Quit, null, (_, _) => Dispatcher.Invoke(ExitApp));
         _trayIcon.ContextMenuStrip = menu;
+    }
+
+    /// <summary>
+    /// Build a WPF ContextMenu used in mini mode (mirrors the tray menu).
+    /// </summary>
+    private void InitializeWindowContextMenu()
+    {
+        _windowContextMenu = new ContextMenu();
+        RebuildWindowContextMenu();
+    }
+
+    private void RebuildWindowContextMenu()
+    {
+        if (_windowContextMenu == null) return;
+        _windowContextMenu.Items.Clear();
+
+        _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_Show, Command = new RelayCommand(ShowWindow) });
+        _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_MiniMode, Command = new RelayCommand(ToggleMiniMode) });
+        _windowContextMenu.Items.Add(new Separator());
+
+        var stopItem = new MenuItem
+        {
+            Header = _isStopped ? Strings.Tray_Resume : Strings.Tray_EndDay,
+            Command = new RelayCommand(ToggleStop)
+        };
+        _windowContextMenu.Items.Add(stopItem);
+
+        if (!_isStopped)
+        {
+            var pauseItem = new MenuItem
+            {
+                Header = _session.IsPaused ? Strings.Tray_Resume : Strings.Tray_Pause,
+                Command = new RelayCommand(() => _session.TogglePause())
+            };
+            _windowContextMenu.Items.Add(pauseItem);
+        }
+
+        var pomodoroItem = new MenuItem
+        {
+            Header = _pomodoroActive ? Strings.Tray_StopPomodoro : Strings.Tray_Pomodoro,
+            Command = new RelayCommand(TogglePomodoro)
+        };
+        _windowContextMenu.Items.Add(pomodoroItem);
+
+        _windowContextMenu.Items.Add(new Separator());
+        _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_ResetDay, Command = new RelayCommand(ResetDay) });
+        _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_History, Command = new RelayCommand(OpenHistory) });
+        _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_Settings, Command = new RelayCommand(OpenSettings) });
+        _windowContextMenu.Items.Add(new Separator());
+        _windowContextMenu.Items.Add(new MenuItem { Header = $"Dayloader Clock {AppVersion.Display}", IsEnabled = false });
+        _windowContextMenu.Items.Add(new MenuItem { Header = Strings.Tray_Quit, Command = new RelayCommand(ExitApp) });
+    }
+
+    /// <summary>Minimal ICommand for context menu items.</summary>
+    private sealed class RelayCommand(Action execute) : ICommand
+    {
+        public event EventHandler? CanExecuteChanged { add { } remove { } }
+        public bool CanExecute(object? parameter) => true;
+        public void Execute(object? parameter) => execute();
     }
 
     private void InitializeTimer()
@@ -168,6 +231,7 @@ public partial class MainWindow : Window
         var displayPercent = Math.Min(progress, 100);
         DrawBar(progress);
         UpdateMiniModeText(isOvertime, isPaused, remaining, displayPercent);
+        if (_isMiniMode) RebuildWindowContextMenu();
         UpdateTrayIcon(progress, effectiveWork, displayPercent);
         UpdateTaskbarProgress(displayPercent, isOvertime, isPaused);
     }
@@ -461,8 +525,7 @@ public partial class MainWindow : Window
 
     private void RestoreWindowPosition()
     {
-        if (_settings.WindowWidth >= MinWidth && _settings.WindowHeight >= MinHeight
-            && _settings.WindowWidth <= MaxWidth && _settings.WindowHeight <= MaxHeight)
+        if (_settings.WindowWidth >= MinWidth && _settings.WindowHeight >= MinHeight)
         {
             Width = _settings.WindowWidth;
             Height = _settings.WindowHeight;
@@ -611,11 +674,7 @@ public partial class MainWindow : Window
 
     private void Pomodoro_Click(object sender, RoutedEventArgs e) => TogglePomodoro();
 
-    private void BarCanvas_DoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        if (e.ClickCount == 2)
-            ToggleMiniMode();
-    }
+    private void MiniMode_Click(object sender, RoutedEventArgs e) => ToggleMiniMode();
 
     private void ToggleMiniMode()
     {
@@ -629,6 +688,7 @@ public partial class MainWindow : Window
             rowTitle.Visibility = Visibility.Collapsed;
             rowInfo.Visibility = Visibility.Collapsed;
             rowMarkers.Visibility = Visibility.Collapsed;
+            rowActions.Visibility = Visibility.Collapsed;
             rowFooter.Visibility = Visibility.Collapsed;
             mainGrid.Margin = new Thickness(2, 2, 2, 2);
             outerBorder.Margin = new Thickness(1);
@@ -636,19 +696,26 @@ public partial class MainWindow : Window
             outerBorder.Effect = null; // Remove shadow in mini mode
             innerBorder.Margin = new Thickness(2);
             innerBorder.CornerRadius = new CornerRadius(6);
+            innerBorder.ContextMenu = _windowContextMenu;
             txtMiniPercent.Visibility = Visibility.Visible;
 
             MinHeight = 0;
-            MinWidth = 200;
+            MinWidth = 100;
             Height = double.NaN; // Auto height — let content decide
             SizeToContent = SizeToContent.Height;
-            ResizeMode = ResizeMode.NoResize;
+            ResizeMode = ResizeMode.CanResizeWithGrip;
+            _miniModeLockedHeight = -1; // will be set after layout
+            Dispatcher.InvokeAsync(() =>
+            {
+                _miniModeLockedHeight = ActualHeight;
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
         else
         {
             rowTitle.Visibility = Visibility.Visible;
             rowInfo.Visibility = Visibility.Visible;
             rowMarkers.Visibility = Visibility.Visible;
+            rowActions.Visibility = Visibility.Visible;
             rowFooter.Visibility = Visibility.Visible;
             mainGrid.Margin = new Thickness(20, 10, 20, 12);
             outerBorder.Margin = new Thickness(6);
@@ -659,12 +726,14 @@ public partial class MainWindow : Window
             };
             innerBorder.Margin = new Thickness(4);
             innerBorder.CornerRadius = new CornerRadius(11);
+            innerBorder.ContextMenu = null;
             txtMiniPercent.Visibility = Visibility.Collapsed;
 
             SizeToContent = SizeToContent.Manual;
             MinHeight = 160;
-            MinWidth = 435;
-            ResizeMode = ResizeMode.CanResizeWithGrip;
+            MinWidth = 340;
+            ResizeMode = ResizeMode.NoResize;
+            _miniModeLockedHeight = -1;
             Width = _savedWidth;
             Height = _savedHeight;
         }
@@ -854,6 +923,13 @@ public partial class MainWindow : Window
     {
         if (WindowState == WindowState.Normal)
         {
+            // In mini mode, lock the height to prevent vertical resizing
+            if (_isMiniMode && _miniModeLockedHeight > 0 && Math.Abs(ActualHeight - _miniModeLockedHeight) > 1)
+            {
+                Height = _miniModeLockedHeight;
+                return;
+            }
+
             _settings.WindowWidth = Width;
             _settings.WindowHeight = Height;
         }

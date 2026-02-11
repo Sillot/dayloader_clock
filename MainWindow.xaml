@@ -4,14 +4,13 @@
         xmlns:res="clr-namespace:DayloaderClock.Resources"
         Title="Dayloader Clock"
         Icon="app.ico"
-        Width="435" Height="160"
-        MinWidth="435" MinHeight="160"
-        MaxWidth="900" MaxHeight="200"
+        Width="340" Height="160"
+        MinWidth="340" MinHeight="160"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         Topmost="True"
-        ResizeMode="CanResizeWithGrip"
+        ResizeMode="NoResize"
         ShowInTaskbar="True">
 
     <Window.TaskbarItemInfo>
@@ -36,6 +35,36 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Background" Value="#30000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Action buttons: slightly larger, subtle style -->
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#6B5035"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="1,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="5"
+                                Padding="3,1">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#30000000"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.35"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -67,28 +96,29 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <!-- ═══ TITLE ═══ -->
                 <Grid x:Name="rowTitle" Grid.Row="0" Margin="0,0,0,6">
-                    <TextBlock x:Name="txtTitle" Text="THE DAYLOADER CLOCK"
-                               FontSize="14" FontWeight="Bold"
-                               Foreground="#4A3520"
-                               FontFamily="Consolas"
-                               HorizontalAlignment="Left"
-                               VerticalAlignment="Center"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-2,-6,0">
-                        <Button x:Name="btnStop" Content="&#x23F9;" Style="{StaticResource ChromeButton}"
-                                Click="Stop_Click" ToolTip="{x:Static res:Strings.Tooltip_EndDay}" FontSize="13"/>
-                        <Button x:Name="btnPause" Content="&#x23F8;" Style="{StaticResource ChromeButton}"
-                                Click="Pause_Click" ToolTip="{x:Static res:Strings.Tooltip_Pause}" FontSize="13"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                        <TextBlock x:Name="txtTitle" Text="THE DAYLOADER CLOCK"
+                                   FontSize="14" FontWeight="Bold"
+                                   Foreground="#4A3520"
+                                   FontFamily="Consolas"
+                                   VerticalAlignment="Center"/>
                         <Button Content="&#x1F4C5;" Style="{StaticResource ChromeButton}"
-                                Click="History_Click" ToolTip="{x:Static res:Strings.Tooltip_History}" FontSize="13"/>
+                                Click="History_Click" ToolTip="{x:Static res:Strings.Tooltip_History}" FontSize="13"
+                                Margin="6,0,0,0"/>
                         <Button Content="&#x2699;" Style="{StaticResource ChromeButton}"
                                 Click="Settings_Click" ToolTip="{x:Static res:Strings.Tooltip_Settings}" FontSize="13"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,-2,-6,0">
+                        <Button x:Name="btnMiniMode" Content="&#x274F;" Style="{StaticResource ChromeButton}"
+                                Click="MiniMode_Click" ToolTip="{x:Static res:Strings.Tooltip_MiniMode}" FontSize="11"/>
                         <Button Content="&#x2014;" Style="{StaticResource ChromeButton}"
                                 Click="MinimizeToTray_Click" ToolTip="{x:Static res:Strings.Tooltip_Minimize}"/>
                         <Button Content="&#x2715;" Style="{StaticResource ChromeButton}"
@@ -109,14 +139,13 @@
                 </Grid>
 
                 <!-- ═══ PROGRESS BAR ═══ -->
-                <Border Grid.Row="2" Background="#3A2E1E" CornerRadius="8"
-                        Padding="4" MinHeight="24">
+                <Border Grid.Row="2" Background="#3A2E1E" CornerRadius="6"
+                        Padding="4" MinHeight="28">
                     <Grid>
                         <Border x:Name="barTrack" CornerRadius="5"
                                 Background="#1E1A12" ClipToBounds="True">
                             <Canvas x:Name="barCanvas" ClipToBounds="True"
-                                    SizeChanged="BarCanvas_SizeChanged"
-                                    MouseLeftButtonDown="BarCanvas_DoubleClick"/>
+                                    SizeChanged="BarCanvas_SizeChanged"/>
                         </Border>
 
                         <!-- Mini mode: percentage overlay -->
@@ -164,14 +193,37 @@
                                Foreground="#6B5035" FontSize="10" FontFamily="Consolas"/>
                 </Grid>
 
-                <!-- ═══ FOOTER ═══ -->
-                <Grid x:Name="rowFooter" Grid.Row="4" Margin="0,3,0,0">
+                <!-- ═══ ACTION BUTTONS ═══ -->
+                <Grid x:Name="rowActions" Grid.Row="4" Margin="0,5,0,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button x:Name="btnPause" Content="&#x23F8;" Style="{StaticResource ActionButton}"
+                                Click="Pause_Click" ToolTip="{x:Static res:Strings.Tooltip_Pause}"/>
+                        <Button x:Name="btnStop" Content="&#x23F9;" Style="{StaticResource ActionButton}"
+                                Click="Stop_Click" ToolTip="{x:Static res:Strings.Tooltip_EndDay}"/>
+                    </StackPanel>
 
-                    <!-- Pomodoro button -->
-                    <Button x:Name="btnPomodoro" Content="🍅" Style="{StaticResource ChromeButton}"
-                            Click="Pomodoro_Click" FontSize="16"
-                            HorizontalAlignment="Left" VerticalAlignment="Center"
-                            Margin="-4,0,0,0" Padding="2,0"/>
+                    <!-- Pomodoro: bar + button together on the right -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Grid x:Name="pomodoroBar" VerticalAlignment="Center"
+                              Visibility="Collapsed" Width="140" Height="14" Margin="0,0,4,0">
+                            <Border Background="#1E1A12" CornerRadius="4" ClipToBounds="True">
+                                <Canvas x:Name="pomodoroCanvas" ClipToBounds="True"/>
+                            </Border>
+                            <TextBlock x:Name="txtPomodoro" Text="" Foreground="#FFFFFF" FontSize="9"
+                                       FontWeight="Bold" FontFamily="Consolas"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock.Effect>
+                                    <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.8"/>
+                                </TextBlock.Effect>
+                            </TextBlock>
+                        </Grid>
+                        <Button x:Name="btnPomodoro" Content="🍅" Style="{StaticResource ActionButton}"
+                                Click="Pomodoro_Click"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- ═══ FOOTER ═══ -->
+                <Grid x:Name="rowFooter" Grid.Row="5" Margin="0,3,0,0">
 
                     <TextBlock x:Name="txtStopIndicator" Text="{x:Static res:Strings.DayCompleted}"
                                Foreground="#CC6633" FontSize="11" FontWeight="Bold"
@@ -189,31 +241,11 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                Visibility="Collapsed"/>
 
-                    <!-- Pomodoro progress bar -->
-                    <Grid x:Name="pomodoroBar" HorizontalAlignment="Center" VerticalAlignment="Center"
-                          Visibility="Collapsed" Width="200" Height="16">
-                        <Border Background="#1E1A12" CornerRadius="4" ClipToBounds="True">
-                            <Canvas x:Name="pomodoroCanvas" ClipToBounds="True"/>
-                        </Border>
-                        <TextBlock x:Name="txtPomodoro" Text="" Foreground="#FFFFFF" FontSize="9"
-                                   FontWeight="Bold" FontFamily="Consolas"
-                                   HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock.Effect>
-                                <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="1" Opacity="0.8"/>
-                            </TextBlock.Effect>
-                        </TextBlock>
-                    </Grid>
-
                     <TextBlock x:Name="txtOvertime" Text=""
                                Foreground="#CC3333" FontSize="11" FontWeight="Bold"
                                FontFamily="Consolas"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                Visibility="Collapsed"/>
-
-                    <TextBlock x:Name="txtVersion" Text="v1.0.0"
-                               Foreground="#8A7560" FontSize="9"
-                               FontFamily="Consolas" HorizontalAlignment="Right"
-                               VerticalAlignment="Bottom" Margin="0,0,0,-2" Opacity="0.6"/>
                 </Grid>
             </Grid>
         </Border>
